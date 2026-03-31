@@ -27,11 +27,19 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/register_backend_hint"
+                    android:textColor="@color/ink_secondary"
+                    android:textSize="13sp" />
+
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/usernameLayout"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
                     android:hint="@string/label_username">
 
                     <com.google.android.material.textfield.TextInputEditText

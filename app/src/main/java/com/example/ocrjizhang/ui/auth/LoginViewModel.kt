@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.data.repository.AuthRepository
+import com.example.ocrjizhang.data.repository.DemoAccount
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,6 +36,15 @@ class LoginViewModel @Inject constructor(
     fun onPasswordChanged(value: String) {
         _uiState.update {
             it.copy(password = it.password.copy(value = value, error = null))
+        }
+    }
+
+    fun fillDemoAccount() {
+        _uiState.update {
+            it.copy(
+                username = it.username.copy(value = DemoAccount.USERNAME, error = null),
+                password = it.password.copy(value = DemoAccount.PASSWORD, error = null),
+            )
         }
     }
 

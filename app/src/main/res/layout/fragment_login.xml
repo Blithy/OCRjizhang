@@ -99,6 +99,46 @@
                     android:layout_marginTop="18dp"
                     android:text="@string/action_login" />
 
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    app:cardBackgroundColor="@color/surface_tint_soft"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/demo_account_title"
+                            android:textColor="@color/ink_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="@string/demo_account_body"
+                            android:textColor="@color/ink_secondary"
+                            android:textSize="13sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/fillDemoAccountButton"
+                            style="@style/Widget.Material3.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="@string/action_fill_demo_account" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <com.google.android.material.progressindicator.LinearProgressIndicator
                     android:id="@+id/progressBar"
                     android:layout_width="match_parent"

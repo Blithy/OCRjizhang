@@ -40,6 +40,9 @@ class LoginFragment : Fragment() {
         binding.loginButton.setOnClickListener {
             viewModel.login()
         }
+        binding.fillDemoAccountButton.setOnClickListener {
+            viewModel.fillDemoAccount()
+        }
         binding.goRegisterButton.setOnClickListener {
             findNavController().navigate(LoginFragmentDirections.actionLoginFragmentToRegisterFragment())
         }

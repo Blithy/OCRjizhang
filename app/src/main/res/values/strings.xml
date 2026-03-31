@@ -61,6 +61,7 @@
     <string name="action_register">注册</string>
     <string name="action_go_register">还没有账号？去注册</string>
     <string name="action_go_login">已有账号？去登录</string>
+    <string name="action_fill_demo_account">一键填入演示账号</string>
     <string name="message_login_success">登录成功</string>
     <string name="message_register_success">注册成功，请登录</string>
     <string name="message_logout_success">已退出登录</string>
@@ -93,4 +94,7 @@
     <string name="action_delete">删除</string>
     <string name="action_cancel">取消</string>
     <string name="error_category_name_required">请输入分类名称</string>
+    <string name="demo_account_title">本机演示账号</string>
+    <string name="demo_account_body">如果本地后端还没启动，可以直接用账号 demo / 123456 登录，先测试主页、分类和后续前端流程。</string>
+    <string name="register_backend_hint">当前注册仍依赖本地后端联调。如果你只是先测试前端流程，建议先返回登录页使用演示账号 demo / 123456。</string>
 </resources>
