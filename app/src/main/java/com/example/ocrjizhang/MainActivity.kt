@@ -22,6 +22,12 @@ class MainActivity : AppCompatActivity() {
         R.id.profileFragment,
     )
 
+    private val toolbarHiddenDestinations = setOf(
+        R.id.splashFragment,
+        R.id.loginFragment,
+        R.id.registerFragment,
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -40,6 +46,7 @@ class MainActivity : AppCompatActivity() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val showBottomNav = destination.id in topLevelDestinations
             binding.bottomNav.isVisible = showBottomNav
+            binding.topAppBar.isVisible = destination.id !in toolbarHiddenDestinations
             binding.navHostFragment.updateLayoutParams<CoordinatorLayout.LayoutParams> {
                 bottomMargin = if (showBottomNav) {
                     resources.getDimensionPixelSize(R.dimen.bottom_nav_space)

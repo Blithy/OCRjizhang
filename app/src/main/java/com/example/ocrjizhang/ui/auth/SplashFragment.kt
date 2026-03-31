@@ -1,4 +1,4 @@
-package com.example.ocrjizhang.ui.profile
+package com.example.ocrjizhang.ui.auth
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,46 +10,49 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.example.ocrjizhang.databinding.FragmentProfileBinding
-import com.example.ocrjizhang.ui.auth.AuthEvent
-import com.example.ocrjizhang.ui.auth.navigateToLoginClearingBackStack
-import com.google.android.material.snackbar.Snackbar
+import com.example.ocrjizhang.R
+import com.example.ocrjizhang.databinding.FragmentSplashBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class ProfileFragment : Fragment() {
+class SplashFragment : Fragment() {
 
-    private var _binding: FragmentProfileBinding? = null
+    private var _binding: FragmentSplashBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: ProfileViewModel by viewModels()
+
+    private val viewModel: SplashViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        _binding = FragmentProfileBinding.inflate(inflater, container, false)
+        _binding = FragmentSplashBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.logoutButton.setOnClickListener {
-            viewModel.logout()
-        }
-
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.eventFlow.collect { event ->
-                    if (event is AuthEvent.LogoutSuccess) {
-                        Snackbar.make(binding.root, com.example.ocrjizhang.R.string.message_logout_success, Snackbar.LENGTH_SHORT).show()
-                        findNavController().navigateToLoginClearingBackStack()
+                viewModel.destinationFlow.collect { destination ->
+                    when (destination) {
+                        SplashDestination.Home -> findNavController().navigateToHomeClearingAuth()
+                        SplashDestination.Login -> {
+                            findNavController().navigate(R.id.action_splashFragment_to_loginFragment) {
+                                popUpTo(R.id.splashFragment) {
+                                    inclusive = true
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+
+        viewModel.decideStartDestination()
     }
 
     override fun onDestroyView() {

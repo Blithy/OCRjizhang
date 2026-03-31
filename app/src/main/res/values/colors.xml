@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="seed">#146C94</color>
-    <color name="primary_brand">#146C94</color>
-    <color name="primary_brand_dark">#0D4C68</color>
-    <color name="secondary_brand">#19A7CE</color>
-    <color name="surface_base">#F6FBFF</color>
+    <color name="seed">#D8654D</color>
+    <color name="primary_brand">#D8654D</color>
+    <color name="primary_brand_dark">#8F3F31</color>
+    <color name="secondary_brand">#F2A65A</color>
+    <color name="surface_base">#FFF8F4</color>
     <color name="surface_container">#FFFFFFFF</color>
-    <color name="surface_tint_soft">#E5F3FA</color>
-    <color name="ink_primary">#102A43</color>
-    <color name="ink_secondary">#486581</color>
-    <color name="positive">#157347</color>
-    <color name="negative">#C92A2A</color>
-    <color name="warning">#D17B0F</color>
-    <color name="outline_soft">#D9E2EC</color>
-    <color name="bottom_nav_item_tint">#FF3B5B75</color>
+    <color name="surface_tint_soft">#FFE7DE</color>
+    <color name="ink_primary">#3B2F2A</color>
+    <color name="ink_secondary">#6F5A52</color>
+    <color name="positive">#4F6B5B</color>
+    <color name="negative">#C94F4F</color>
+    <color name="warning">#D4872D</color>
+    <color name="outline_soft">#E9D7CF</color>
+    <color name="bottom_nav_item_tint">#8A5D50</color>
 </resources>
