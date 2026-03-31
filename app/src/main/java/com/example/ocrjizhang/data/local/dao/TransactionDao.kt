@@ -14,6 +14,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY transactionTime DESC")
     fun observeTransactions(userId: Long): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM transactions WHERE id = :transactionId LIMIT 1")
+    suspend fun getTransactionById(transactionId: Long): TransactionEntity?
+
     @Query(
         """
         SELECT * FROM transactions

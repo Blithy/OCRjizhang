@@ -13,7 +13,7 @@
     <string name="page_register">注册</string>
     <string name="page_splash">启动中</string>
     <string name="home_hero_title">把票据、分类、统计放在一条顺手的记账流里</string>
-    <string name="home_hero_subtitle">这一版先完成 Android 端基础骨架，后续会在这里接入登录、交易、OCR 与同步能力。</string>
+    <string name="home_hero_subtitle">现在已经能从本地会话进入主页，接下来重点把基础记账流程做成真实可演示的闭环。</string>
     <string name="home_card_balance_title">本月收支总览</string>
     <string name="home_card_balance_income">收入 ￥12,680.00</string>
     <string name="home_card_balance_expense">支出 ￥4,230.50</string>
@@ -23,7 +23,11 @@
     <string name="home_quick_ocr">票据识别</string>
     <string name="home_quick_category">分类管理</string>
     <string name="home_sync_title">同步准备状态</string>
-    <string name="home_sync_subtitle">基础网络、数据库与会话管理已经接入，当前正在落地分类管理闭环。</string>
+    <string name="home_sync_subtitle">基础网络、数据库与会话管理已经接入，当前正在落地交易增删改查闭环。</string>
+    <string name="home_recent_title">最近记账</string>
+    <string name="home_recent_subtitle">这里会显示你最近保存的几笔收入和支出。</string>
+    <string name="home_recent_empty_title">最近还没有记账记录</string>
+    <string name="home_recent_empty_body">先新增一笔收入或支出，首页就会开始显示真实摘要。</string>
     <string name="statistics_summary_title">统计模块骨架已就位</string>
     <string name="statistics_summary_subtitle">后续这里会接入 Room 聚合结果与 MPAndroidChart 图表。</string>
     <string name="statistics_day">日</string>
@@ -97,4 +101,25 @@
     <string name="demo_account_title">本机演示账号</string>
     <string name="demo_account_body">如果本地后端还没启动，可以直接用账号 demo / 123456 登录，先测试主页、分类和后续前端流程。</string>
     <string name="register_backend_hint">当前注册仍依赖本地后端联调。如果你只是先测试前端流程，建议先返回登录页使用演示账号 demo / 123456。</string>
+    <string name="transaction_headline">把今天的收入和支出认真落下来</string>
+    <string name="transaction_headline_subtitle">先完成本地记账闭环，后续 OCR 和统计模块就能直接复用这些真实数据。</string>
+    <string name="transaction_type_expense">支出</string>
+    <string name="transaction_type_income">收入</string>
+    <string name="label_amount">金额</string>
+    <string name="hint_amount">请输入金额，例如 32.50</string>
+    <string name="hint_transaction_category">请选择分类</string>
+    <string name="label_transaction_date">记账日期</string>
+    <string name="transaction_date_today">选择日期</string>
+    <string name="label_transaction_merchant">商户</string>
+    <string name="hint_transaction_merchant">例如 便利店、咖啡店（可选）</string>
+    <string name="label_transaction_remark">备注</string>
+    <string name="hint_transaction_remark">补充这笔开销的细节（可选）</string>
+    <string name="transaction_action_save">保存这笔记账</string>
+    <string name="transaction_action_reset">清空表单</string>
+    <string name="transaction_recent_title">交易记录</string>
+    <string name="transaction_recent_subtitle">点编辑可以把记录重新带回表单，点删除会直接物理删除。</string>
+    <string name="transaction_empty_title">还没有交易记录</string>
+    <string name="transaction_empty_body">先保存一笔收入或支出，这里就会开始出现真实记录。</string>
+    <string name="transaction_delete_title">删除交易</string>
+    <string name="transaction_delete_message">确定删除这笔 %1$s 的交易吗？删除后会立即从本地记录中移除。</string>
 </resources>
