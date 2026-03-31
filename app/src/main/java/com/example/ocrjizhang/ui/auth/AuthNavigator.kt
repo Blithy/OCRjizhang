@@ -1,22 +1,21 @@
 package com.example.ocrjizhang.ui.auth
 
 import androidx.navigation.NavController
-import com.example.ocrjizhang.R
+import androidx.navigation.NavOptions
+import com.example.ocrjizhang.MainNavGraphDirections
 
 fun NavController.navigateToHomeClearingAuth() {
-    navigate(R.id.homeFragment) {
-        popUpTo(graph.id) {
-            inclusive = true
-        }
-        launchSingleTop = true
-    }
+    val options = NavOptions.Builder()
+        .setPopUpTo(graph.id, true)
+        .setLaunchSingleTop(true)
+        .build()
+    navigate(MainNavGraphDirections.actionGlobalHomeFragment(), options)
 }
 
 fun NavController.navigateToLoginClearingBackStack() {
-    navigate(R.id.loginFragment) {
-        popUpTo(graph.id) {
-            inclusive = true
-        }
-        launchSingleTop = true
-    }
+    val options = NavOptions.Builder()
+        .setPopUpTo(graph.id, true)
+        .setLaunchSingleTop(true)
+        .build()
+    navigate(MainNavGraphDirections.actionGlobalLoginFragment(), options)
 }

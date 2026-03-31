@@ -41,7 +41,7 @@ class LoginFragment : Fragment() {
             viewModel.login()
         }
         binding.goRegisterButton.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_registerFragment)
+            findNavController().navigate(LoginFragmentDirections.actionLoginFragmentToRegisterFragment())
         }
         binding.usernameEdit.doAfterTextChangedCompat(viewModel::onUsernameChanged)
         binding.passwordEdit.doAfterTextChangedCompat(viewModel::onPasswordChanged)

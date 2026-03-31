@@ -9,8 +9,8 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
-import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.FragmentSplashBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -41,11 +41,13 @@ class SplashFragment : Fragment() {
                     when (destination) {
                         SplashDestination.Home -> findNavController().navigateToHomeClearingAuth()
                         SplashDestination.Login -> {
-                            findNavController().navigate(R.id.action_splashFragment_to_loginFragment) {
-                                popUpTo(R.id.splashFragment) {
-                                    inclusive = true
-                                }
-                            }
+                            val options = NavOptions.Builder()
+                                .setPopUpTo(findNavController().graph.id, true)
+                                .build()
+                            findNavController().navigate(
+                                SplashFragmentDirections.actionSplashFragmentToLoginFragment(),
+                                options,
+                            )
                         }
                     }
                 }
