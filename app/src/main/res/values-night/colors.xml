@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="seed">#19A7CE</color>
+    <color name="primary_brand">#19A7CE</color>
+    <color name="primary_brand_dark">#113547</color>
+    <color name="secondary_brand">#8FDBF4</color>
+    <color name="surface_base">#08141D</color>
+    <color name="surface_container">#102633</color>
+    <color name="surface_tint_soft">#173A4C</color>
+    <color name="ink_primary">#EAF6FB</color>
+    <color name="ink_secondary">#A7C4D3</color>
+    <color name="positive">#65D6A6</color>
+    <color name="negative">#FF8A8A</color>
+    <color name="warning">#FFD479</color>
+    <color name="outline_soft">#234A60</color>
+    <color name="bottom_nav_item_tint">#D8ECF5</color>
+</resources>

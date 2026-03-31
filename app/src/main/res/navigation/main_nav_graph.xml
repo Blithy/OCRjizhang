@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.ocrjizhang.ui.home.HomeFragment"
+        android:label="@string/page_home">
+        <action
+            android:id="@+id/action_homeFragment_to_transactionEditorFragment"
+            app:destination="@id/transactionEditorFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_categoryFragment"
+            app:destination="@id/categoryFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_ocrFragment"
+            app:destination="@id/ocrFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/statisticsFragment"
+        android:name="com.example.ocrjizhang.ui.statistics.StatisticsFragment"
+        android:label="@string/page_statistics" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.example.ocrjizhang.ui.profile.ProfileFragment"
+        android:label="@string/page_profile" />
+
+    <fragment
+        android:id="@+id/transactionEditorFragment"
+        android:name="com.example.ocrjizhang.ui.transaction.TransactionEditorFragment"
+        android:label="@string/page_transaction_editor" />
+
+    <fragment
+        android:id="@+id/categoryFragment"
+        android:name="com.example.ocrjizhang.ui.category.CategoryFragment"
+        android:label="@string/page_category" />
+
+    <fragment
+        android:id="@+id/ocrFragment"
+        android:name="com.example.ocrjizhang.ui.ocr.OcrFragment"
+        android:label="@string/page_ocr" />
+</navigation>
