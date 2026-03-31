@@ -136,8 +136,11 @@
     <string name="ocr_headline_subtitle">当前版本先支持相册选图、本地 PaddleOCR 识别、字段提取和一键带入记账表单，重点保证演示流程顺畅可见。</string>
     <string name="ocr_pick_title">选择票据图片</string>
     <string name="ocr_pick_hint">先从相册选择一张票据图片</string>
+    <string name="ocr_action_capture">直接拍照</string>
     <string name="ocr_action_pick">选择图片</string>
     <string name="ocr_action_recognize">开始识别</string>
+    <string name="ocr_message_camera_cancelled">本次拍照已取消</string>
+    <string name="ocr_message_camera_open_failed">无法打开系统相机</string>
     <string name="ocr_result_title">识别结果</string>
     <string name="ocr_result_subtitle">金额、日期、商户会优先自动提取，识别原文也会完整保留，方便你手动核对。</string>
     <string name="ocr_field_amount">金额</string>

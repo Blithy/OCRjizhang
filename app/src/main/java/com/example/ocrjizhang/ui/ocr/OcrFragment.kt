@@ -1,6 +1,7 @@
 package com.example.ocrjizhang.ui.ocr
 
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,7 +15,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.FragmentOcrBinding
+import com.example.ocrjizhang.utils.ImageFileUtils
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -31,11 +34,28 @@ class OcrFragment : Fragment() {
             onUseRecord = viewModel::fillHistoryRecord,
         )
     }
+    private var pendingCameraUri: Uri? = null
 
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         uri?.let(viewModel::onImageSelected)
+    }
+
+    private val takePictureLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture(),
+    ) { success ->
+        val capturedUri = pendingCameraUri
+        pendingCameraUri = null
+        if (success && capturedUri != null) {
+            viewModel.onImageSelected(capturedUri)
+        } else if (!success) {
+            Snackbar.make(
+                binding.root,
+                getString(R.string.ocr_message_camera_cancelled),
+                Snackbar.LENGTH_SHORT,
+            ).show()
+        }
     }
 
     override fun onCreateView(
@@ -51,6 +71,20 @@ class OcrFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.historyList.adapter = historyAdapter
+        binding.captureImageButton.setOnClickListener {
+            runCatching {
+                ImageFileUtils.createCameraCaptureUri(requireContext())
+            }.onSuccess { uri ->
+                pendingCameraUri = uri
+                takePictureLauncher.launch(uri)
+            }.onFailure { throwable ->
+                Snackbar.make(
+                    binding.root,
+                    throwable.message ?: getString(R.string.ocr_message_camera_open_failed),
+                    Snackbar.LENGTH_SHORT,
+                ).show()
+            }
+        }
         binding.pickImageButton.setOnClickListener {
             pickImageLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
