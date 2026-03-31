@@ -8,6 +8,7 @@ import com.example.ocrjizhang.data.remote.service.OcrService
 import com.example.ocrjizhang.data.remote.service.SyncService
 import com.example.ocrjizhang.data.remote.service.TransactionService
 import com.example.ocrjizhang.data.repository.SessionManager
+import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,6 +25,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson = Gson()
 
     @Provides
     @Singleton
@@ -79,21 +84,27 @@ object NetworkModule {
     @Provides
     @Singleton
     @Named("backendRetrofit")
-    fun provideBackendRetrofit(@Named("backendClient") client: OkHttpClient): Retrofit =
+    fun provideBackendRetrofit(
+        @Named("backendClient") client: OkHttpClient,
+        gson: Gson,
+    ): Retrofit =
         Retrofit.Builder()
             .baseUrl(BuildConfig.BASE_URL)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
 
     @Provides
     @Singleton
     @Named("ocrRetrofit")
-    fun provideOcrRetrofit(@Named("ocrClient") client: OkHttpClient): Retrofit =
+    fun provideOcrRetrofit(
+        @Named("ocrClient") client: OkHttpClient,
+        gson: Gson,
+    ): Retrofit =
         Retrofit.Builder()
             .baseUrl(ApiConstants.BAIDU_BASE_URL)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
 
     @Provides

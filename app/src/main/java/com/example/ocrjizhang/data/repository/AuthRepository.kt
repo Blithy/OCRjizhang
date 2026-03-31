@@ -10,6 +10,7 @@ import javax.inject.Singleton
 class AuthRepository @Inject constructor(
     private val authService: AuthService,
     private val sessionManager: SessionManager,
+    private val categoryRepository: CategoryRepository,
 ) {
 
     suspend fun login(username: String, password: String): Result<Unit> = runCatching {
@@ -30,6 +31,7 @@ class AuthRepository @Inject constructor(
                 nickname = response.data.nickname.orEmpty(),
             ),
         )
+        categoryRepository.ensureDefaultCategories(response.data.userId)
     }
 
     suspend fun register(

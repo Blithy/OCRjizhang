@@ -10,7 +10,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.FragmentHomeBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -36,13 +35,13 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.addRecordCard.setOnClickListener {
-            findNavController().navigate(R.id.action_homeFragment_to_transactionEditorFragment)
+            findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToTransactionEditorFragment())
         }
         binding.ocrCard.setOnClickListener {
-            findNavController().navigate(R.id.action_homeFragment_to_ocrFragment)
+            findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToOcrFragment())
         }
         binding.categoryCard.setOnClickListener {
-            findNavController().navigate(R.id.action_homeFragment_to_categoryFragment)
+            findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToCategoryFragment())
         }
 
         viewLifecycleOwner.lifecycleScope.launch {

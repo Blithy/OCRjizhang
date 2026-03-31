@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.example.ocrjizhang.data.local.entity.SyncStatus
 import com.example.ocrjizhang.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -31,6 +32,42 @@ interface TransactionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(transactions: List<TransactionEntity>)
+
+    @Query(
+        """
+        UPDATE transactions
+        SET categoryId = :newCategoryId,
+            categoryName = :newCategoryName,
+            updatedAt = :updatedAt,
+            syncStatus = :syncStatus
+        WHERE userId = :userId AND categoryId = :oldCategoryId
+        """
+    )
+    suspend fun reassignCategory(
+        userId: Long,
+        oldCategoryId: Long,
+        newCategoryId: Long,
+        newCategoryName: String,
+        updatedAt: Long,
+        syncStatus: SyncStatus,
+    )
+
+    @Query(
+        """
+        UPDATE transactions
+        SET categoryName = :newCategoryName,
+            updatedAt = :updatedAt,
+            syncStatus = :syncStatus
+        WHERE userId = :userId AND categoryId = :categoryId
+        """
+    )
+    suspend fun renameCategoryInTransactions(
+        userId: Long,
+        categoryId: Long,
+        newCategoryName: String,
+        updatedAt: Long,
+        syncStatus: SyncStatus,
+    )
 
     @Query("DELETE FROM transactions WHERE id = :transactionId")
     suspend fun deleteById(transactionId: Long)
