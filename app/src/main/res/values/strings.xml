@@ -132,4 +132,22 @@
     <string name="transaction_empty_body">先保存一笔收入或支出，这里就会开始出现真实记录。</string>
     <string name="transaction_delete_title">删除交易</string>
     <string name="transaction_delete_message">确定删除这笔 %1$s 的交易吗？删除后会立即从本地记录中移除。</string>
+    <string name="ocr_headline">把票据照片快速变成一笔可编辑的生活记账</string>
+    <string name="ocr_headline_subtitle">当前版本先支持相册选图、本地 PaddleOCR 识别、字段提取和一键带入记账表单，重点保证演示流程顺畅可见。</string>
+    <string name="ocr_pick_title">选择票据图片</string>
+    <string name="ocr_pick_hint">先从相册选择一张票据图片</string>
+    <string name="ocr_action_pick">选择图片</string>
+    <string name="ocr_action_recognize">开始识别</string>
+    <string name="ocr_result_title">识别结果</string>
+    <string name="ocr_result_subtitle">金额、日期、商户会优先自动提取，识别原文也会完整保留，方便你手动核对。</string>
+    <string name="ocr_field_amount">金额</string>
+    <string name="ocr_field_date">日期</string>
+    <string name="ocr_field_merchant">商户</string>
+    <string name="ocr_raw_text_title">原始识别文本</string>
+    <string name="ocr_action_fill">带入记账表单</string>
+    <string name="ocr_history_title">最近识别记录</string>
+    <string name="ocr_history_subtitle">为了演示更顺手，最近 OCR 记录会保留在本地，后续可直接再次带入记账。</string>
+    <string name="ocr_history_empty_title">还没有 OCR 识别记录</string>
+    <string name="ocr_history_empty_body">识别成功后，最近记录会保留在这里，方便你重复带入记账。</string>
+    <string name="ocr_action_use_record">再次带入</string>
 </resources>

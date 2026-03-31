@@ -43,6 +43,7 @@ class TransactionViewModel @Inject constructor(
     private val merchantInput = MutableStateFlow("")
     private val remarkInput = MutableStateFlow("")
     private val editingTransactionId = MutableStateFlow<Long?>(null)
+    private var prefillApplied = false
 
     private val _eventFlow = MutableSharedFlow<TransactionEvent>()
     val eventFlow: SharedFlow<TransactionEvent> = _eventFlow.asSharedFlow()
@@ -162,6 +163,38 @@ class TransactionViewModel @Inject constructor(
 
     fun onDateSelected(selectedMillis: Long) {
         dateMillis.value = selectedMillis
+    }
+
+    fun applyPrefill(
+        amount: String,
+        merchant: String,
+        remark: String,
+        dateMillis: Long?,
+    ) {
+        if (prefillApplied) return
+        prefillApplied = true
+
+        var hasAnyPrefill = false
+        if (amount.isNotBlank()) {
+            amountInput.value = amount
+            hasAnyPrefill = true
+        }
+        if (merchant.isNotBlank()) {
+            merchantInput.value = merchant
+            hasAnyPrefill = true
+        }
+        if (remark.isNotBlank()) {
+            remarkInput.value = remark
+            hasAnyPrefill = true
+        }
+        if (dateMillis != null) {
+            this.dateMillis.value = dateMillis
+            hasAnyPrefill = true
+        }
+        if (hasAnyPrefill) {
+            selectedType.value = RecordType.EXPENSE
+            emitMessage("已带入 OCR 识别结果，可手动调整后再保存")
+        }
     }
 
     fun submit() {

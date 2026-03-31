@@ -6,6 +6,7 @@
 .externalNativeBuild/
 .cxx/
 .DS_Store
+**/._*
 *.log
 *.hprof
 *.apk
@@ -20,3 +21,12 @@ google-services.json
 
 # Android Studio / IntelliJ
 .idea/
+
+# Local OCR source bundles
+/PaddleOCR-3.4.0/
+/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.with_cv/
+/inference_lite_lib.android.armv8.gcc.c++_shared.with_extra.with_cv.tar.gz
+/ch_PP-OCRv3_det_infer.nb
+/ch_PP-OCRv3_rec_infer.nb
+/ch_ppocr_mobile_v2.0_cls_infer_opt.nb
+/third_party_downloads/

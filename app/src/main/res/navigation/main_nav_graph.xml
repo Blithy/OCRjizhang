@@ -63,7 +63,24 @@
     <fragment
         android:id="@+id/transactionEditorFragment"
         android:name="com.example.ocrjizhang.ui.transaction.TransactionEditorFragment"
-        android:label="@string/page_transaction_editor" />
+        android:label="@string/page_transaction_editor">
+        <argument
+            android:name="prefillAmount"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="prefillMerchant"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="prefillRemark"
+            app:argType="string"
+            android:defaultValue="" />
+        <argument
+            android:name="prefillDateMillis"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
 
     <fragment
         android:id="@+id/categoryFragment"
@@ -73,5 +90,9 @@
     <fragment
         android:id="@+id/ocrFragment"
         android:name="com.example.ocrjizhang.ui.ocr.OcrFragment"
-        android:label="@string/page_ocr" />
+        android:label="@string/page_ocr">
+        <action
+            android:id="@+id/action_ocrFragment_to_transactionEditorFragment"
+            app:destination="@id/transactionEditorFragment" />
+    </fragment>
 </navigation>

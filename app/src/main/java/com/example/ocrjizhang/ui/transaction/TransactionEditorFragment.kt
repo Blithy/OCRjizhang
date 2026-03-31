@@ -12,6 +12,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.navArgs
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.data.local.entity.RecordType
 import com.example.ocrjizhang.databinding.FragmentTransactionEditorBinding
@@ -28,6 +29,7 @@ class TransactionEditorFragment : Fragment() {
     private var _binding: FragmentTransactionEditorBinding? = null
     private val binding get() = _binding!!
     private val viewModel: TransactionViewModel by viewModels()
+    private val args: TransactionEditorFragmentArgs by navArgs()
 
     private var categoryOptions: List<CategoryOption> = emptyList()
     private val transactionAdapter by lazy {
@@ -84,6 +86,13 @@ class TransactionEditorFragment : Fragment() {
         binding.secondaryButton.setOnClickListener {
             viewModel.clearForm()
         }
+
+        viewModel.applyPrefill(
+            amount = args.prefillAmount,
+            merchant = args.prefillMerchant,
+            remark = args.prefillRemark,
+            dateMillis = args.prefillDateMillis.takeIf { it > 0L },
+        )
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
