@@ -30,6 +30,16 @@ class TransactionRepository @Inject constructor(
     fun observeTransactions(userId: Long): Flow<List<TransactionEntity>> =
         transactionDao.observeTransactions(userId)
 
+    fun observeTransactionsBetween(
+        userId: Long,
+        startTime: Long,
+        endTime: Long,
+    ): Flow<List<TransactionEntity>> = transactionDao.observeTransactionsBetween(
+        userId = userId,
+        startTime = startTime,
+        endTime = endTime,
+    )
+
     suspend fun createTransaction(
         userId: Long,
         type: RecordType,
