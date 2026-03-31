@@ -50,7 +50,7 @@
     <string name="profile_sync_title">同步策略</string>
     <string name="profile_sync_subtitle">将采用本地优先、updatedAt 合并、离线补同步队列。</string>
     <string name="profile_build_title">构建信息</string>
-    <string name="profile_build_subtitle">minSdk 34 / targetSdk 34 / compileSdk 36</string>
+    <string name="profile_build_subtitle">minSdk 26 / targetSdk 34 / compileSdk 36</string>
     <string name="profile_logout">退出登录</string>
     <string name="placeholder_title">模块占位页</string>
     <string name="transaction_placeholder_body">交易录入页骨架已创建，下一轮将接入表单、分类选择、金额校验与保存逻辑。</string>

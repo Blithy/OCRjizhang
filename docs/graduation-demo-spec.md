@@ -99,14 +99,14 @@ Android 智能 OCR 记账 App
 
 ### 4.2 Android 版本基线
 
-1. `minSdk = 34`
+1. `minSdk = 26`
 2. `targetSdk = 34`
 3. `compileSdk = 36`
 4. `JDK = 17`
 
 说明：
 
-当前工程依赖版本要求 `compileSdk` 至少为 36，因此正式规格采用 `compileSdk 36 / targetSdk 34 / minSdk 34` 组合。
+当前工程依赖版本要求 `compileSdk` 至少为 36，因此正式规格采用 `compileSdk 36 / targetSdk 34 / minSdk 26` 组合。
 
 ### 4.3 后端技术栈
 
@@ -826,6 +826,6 @@ OCR 历史仅保留最近 50 条。
 2. OCR 由 App 直连百度 OCR API。
 3. 登录保留，但采用简单 token 方案，不做复杂安全体系。
 4. 同步采用简化的 `updatedAt` 冲突处理规则。
-5. `compileSdk = 36`，`targetSdk = 34`，`minSdk = 34`。
+5. `compileSdk = 36`，`targetSdk = 34`，`minSdk = 26`。
 
 后续开发默认按照本文档执行，除非用户明确要求修订。
