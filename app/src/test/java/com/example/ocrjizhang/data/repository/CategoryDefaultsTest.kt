@@ -67,23 +67,23 @@ class CategoryDefaultsTest {
     @Test
     fun `buildMissingDefaults skips reseeding when legacy default count is already complete`() {
         val legacyExpenseDefaults = listOf(
-            "椁愰ギ",
-            "浜ら€?",
-            "璐墿",
-            "鏃ョ敤",
-            "濞变箰",
-            "鍖荤枟",
-            "浣忔埧",
-            "鏈垎绫?",
-        )
+            "餐饮",
+            "交通",
+            "购物",
+            "日用",
+            "娱乐",
+            "医疗",
+            "住房",
+            "未分类",
+        ).map(CategoryDefaults::legacyAliasOf)
         val legacyIncomeDefaults = listOf(
-            "宸ヨ祫",
-            "濂栭噾",
-            "鍏艰亴",
-            "鐞嗚储",
-            "鍏朵粬",
-            "鏈垎绫?",
-        )
+            "工资",
+            "奖金",
+            "兼职",
+            "理财",
+            "其他",
+            "未分类",
+        ).map(CategoryDefaults::legacyAliasOf)
         val existing = buildList {
             legacyExpenseDefaults.forEachIndexed { index, name ->
                 add(

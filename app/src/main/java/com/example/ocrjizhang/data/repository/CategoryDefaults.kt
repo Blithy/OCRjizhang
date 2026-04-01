@@ -4,6 +4,7 @@ import com.example.ocrjizhang.data.local.entity.CategoryEntity
 import com.example.ocrjizhang.data.local.entity.RecordType
 import com.example.ocrjizhang.data.local.entity.SyncStatus
 import com.example.ocrjizhang.utils.LocalIdGenerator
+import java.nio.charset.Charset
 
 data class CategorySeedTemplate(
     val name: String,
@@ -12,7 +13,7 @@ data class CategorySeedTemplate(
 
 object CategoryDefaults {
     const val UNCATEGORIZED_NAME = "未分类"
-    private const val LEGACY_UNCATEGORIZED_NAME = "鏈垎绫?"
+    private val legacyGbkCharset = Charset.forName("GBK")
 
     private val templates = listOf(
         CategorySeedTemplate("餐饮", RecordType.EXPENSE),
@@ -71,6 +72,9 @@ object CategoryDefaults {
             }
     }
 
+    fun legacyAliasOf(name: String): String =
+        String(name.toByteArray(Charsets.UTF_8), legacyGbkCharset)
+
     fun uncategorizedAliases(): List<String> =
-        listOf(UNCATEGORIZED_NAME, LEGACY_UNCATEGORIZED_NAME).distinct()
+        listOf(UNCATEGORIZED_NAME, legacyAliasOf(UNCATEGORIZED_NAME)).distinct()
 }
