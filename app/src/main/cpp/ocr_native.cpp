@@ -17,6 +17,8 @@
 
 #include "paddle_api.h"
 #include "paddle_place.h"
+#include "paddle_use_kernels.h"
+#include "paddle_use_ops.h"
 #include "cls_process.h"
 #include "crnn_process.h"
 #include "db_post_process.h"
@@ -38,6 +40,10 @@ std::unique_ptr<class PaddleOcrEngine> g_engine;
 
 void LogError(const std::string& message) {
     __android_log_print(ANDROID_LOG_ERROR, kLogTag, "%s", message.c_str());
+}
+
+void LogInfo(const std::string& message) {
+    __android_log_print(ANDROID_LOG_INFO, kLogTag, "%s", message.c_str());
 }
 
 void ThrowIllegalState(JNIEnv* env, const std::string& message) {
@@ -371,10 +377,16 @@ public:
         charactor_dict_.insert(charactor_dict_.begin(), "#");
         charactor_dict_.push_back(" ");
 
+        LogInfo("Loading detection model: " + JoinPath(runtime_dir_, kDetModelName));
         det_predictor_ = LoadModel(JoinPath(runtime_dir_, kDetModelName), 2);
+        LogInfo("Detection model loaded");
+        LogInfo("Loading recognition model: " + JoinPath(runtime_dir_, kRecModelName));
         rec_predictor_ = LoadModel(JoinPath(runtime_dir_, kRecModelName), 2);
+        LogInfo("Recognition model loaded");
         if (use_direction_classify_ >= 1) {
+            LogInfo("Loading classifier model: " + JoinPath(runtime_dir_, kClsModelName));
             cls_predictor_ = LoadModel(JoinPath(runtime_dir_, kClsModelName), 2);
+            LogInfo("Classifier model loaded");
         }
 
         if (det_predictor_ == nullptr || rec_predictor_ == nullptr) {
