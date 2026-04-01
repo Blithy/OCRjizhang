@@ -91,7 +91,7 @@ class OcrReceiptParserTest {
         assertEquals("13.40", result.amountText)
         assertEquals(1_340L, result.amountFen)
         assertEquals("2026年04月01日14:26:15", result.dateText)
-        assertEquals("美团", result.merchantName)
+        assertEquals("鹿角巷(万象宜宾天地店)", result.merchantName)
         assertNotNull(result.dateMillis)
     }
 }

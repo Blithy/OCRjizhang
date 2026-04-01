@@ -109,6 +109,17 @@ object OcrReceiptParser {
         "\u652f\u4ed8\u5b9d",
     )
 
+    private val merchantPlatformNames = setOf(
+        "\u7f8e\u56e2",
+        "\u997f\u4e86\u4e48",
+        "\u5fae\u4fe1",
+        "\u652f\u4ed8\u5b9d",
+        "\u6296\u97f3",
+        "\u4eac\u4e1c",
+        "\u6dd8\u5b9d",
+        "\u62fc\u591a\u591a",
+    )
+
     fun parse(rawText: String): ParsedReceiptData {
         val lines = rawText.lineSequence()
             .map(::normalizeLine)
@@ -228,7 +239,9 @@ object OcrReceiptParser {
                     if (hasPenaltyKeyword) score -= 80
                     if (hasDateKeyword && !hasKeyword) score -= 50
                     if (line.contains(':') && !rawAmount.contains('.') && !hasKeyword) score -= 60
-                    score += amountFen.coerceAtMost(999_999L).toInt() / 200
+                    if (!hasKeyword && !rawAmount.contains('.') && !rawAmount.startsWith("-")) score -= 55
+                    if (!hasKeyword && normalizedText.length >= 4 && !rawAmount.contains('.')) score -= 35
+                    score += amountFen.coerceAtMost(99_999L).toInt() / 1_000
 
                     add(
                         AmountCandidate(
@@ -275,11 +288,12 @@ object OcrReceiptParser {
                 val line = rawLine
                     .trimStart('`', '.', '\u00b7', '\u3002', '-', '_', ':')
                     .trim()
+                val normalizedMerchant = normalizeMerchantName(line)
                 val shouldInspect = index < 18 || amountLineIndex?.let { abs(index - it) <= 3 } == true
                 if (!shouldInspect) {
                     return@forEachIndexed
                 }
-                if (line.length !in 2..32) {
+                if (normalizedMerchant.length !in 2..32) {
                     return@forEachIndexed
                 }
                 if (merchantStopWords.any { stopWord ->
@@ -291,9 +305,12 @@ object OcrReceiptParser {
                 if (decimalAmountRegex.containsMatchIn(line) || timeOnlyRegex.matches(line) || dateRegex.containsMatchIn(line)) {
                     return@forEachIndexed
                 }
+                if (merchantPlatformNames.contains(normalizedMerchant)) {
+                    return@forEachIndexed
+                }
 
-                val digitCount = line.count(Char::isDigit)
-                val letterOrChineseCount = line.count { character ->
+                val digitCount = normalizedMerchant.count(Char::isDigit)
+                val letterOrChineseCount = normalizedMerchant.count { character ->
                     character.isLetter() || character.code in 0x4E00..0x9FFF
                 }
                 if (digitCount > 6 || letterOrChineseCount < 2) {
@@ -301,14 +318,20 @@ object OcrReceiptParser {
                 }
 
                 var score = 100 - index * 6
-                if (merchantKeywords.any { keyword -> line.contains(keyword, ignoreCase = true) }) {
+                if (merchantKeywords.any { keyword -> normalizedMerchant.contains(keyword, ignoreCase = true) }) {
                     score += 40
                 }
                 if (digitCount == 0) {
                     score += 20
                 }
-                if (line.length in 2..10) {
+                if (normalizedMerchant.length in 2..10) {
                     score += 20
+                }
+                if (normalizedMerchant.contains('(') || normalizedMerchant.contains('\uff08')) {
+                    score += 35
+                }
+                if (normalizedMerchant.length >= 8) {
+                    score += 15
                 }
                 if (amountLineIndex != null && index < amountLineIndex) {
                     score += 10
@@ -320,7 +343,7 @@ object OcrReceiptParser {
                     score += 30
                 }
 
-                add(MerchantCandidate(line, score))
+                add(MerchantCandidate(normalizedMerchant, score))
             }
         }
 
@@ -329,6 +352,15 @@ object OcrReceiptParser {
 
     private fun normalizeDateText(rawDate: String): String = rawDate
         .replace(Regex("""\s+"""), " ")
+        .trim()
+
+    private fun normalizeMerchantName(rawMerchant: String): String = rawMerchant
+        .replace(
+            Regex("""[-\s]*(美团|饿了么|微信|支付宝|京东|淘宝|拼多多)\s*(App|app|小程序)?[-\s]*$"""),
+            "",
+        )
+        .trim()
+        .trim('-', '_', '.', '\u00b7', '\u3002', ':')
         .trim()
 
     private data class AmountCandidate(
