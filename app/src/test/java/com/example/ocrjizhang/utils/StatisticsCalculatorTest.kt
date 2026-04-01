@@ -71,6 +71,45 @@ class StatisticsCalculatorTest {
         assertEquals("\u7b2c1\u5468", snapshot.trendBreakdown.first().label)
     }
 
+    @Test
+    fun `buildSnapshot excludes income transactions from category breakdown`() {
+        val now = localDate("2024-03-31")
+        val monday = localDate("2024-03-25")
+        val tuesday = localDate("2024-03-26")
+
+        val snapshot = StatisticsCalculator.buildSnapshot(
+            period = StatisticsPeriod.WEEK,
+            transactions = listOf(
+                transaction(id = 1L, type = RecordType.INCOME, amountFen = 300_00L, categoryName = "salary", transactionTime = monday),
+                transaction(id = 2L, type = RecordType.EXPENSE, amountFen = 66_00L, categoryName = "food", transactionTime = tuesday),
+            ),
+            nowMillis = now,
+            zoneId = zoneId,
+        )
+
+        assertEquals(1, snapshot.categoryBreakdown.size)
+        assertEquals("food", snapshot.categoryBreakdown.single().categoryName)
+        assertEquals(1f, snapshot.categoryBreakdown.single().share)
+    }
+
+    @Test
+    fun `buildSnapshot day period creates a single today bucket`() {
+        val now = localDate("2024-03-31")
+
+        val snapshot = StatisticsCalculator.buildSnapshot(
+            period = StatisticsPeriod.DAY,
+            transactions = listOf(
+                transaction(id = 1L, type = RecordType.EXPENSE, amountFen = 88_00L, categoryName = "coffee", transactionTime = now),
+            ),
+            nowMillis = now,
+            zoneId = zoneId,
+        )
+
+        assertEquals(1, snapshot.trendBreakdown.size)
+        assertEquals("今天", snapshot.trendBreakdown.single().label)
+        assertEquals(88_00L, snapshot.trendBreakdown.single().expenseFen)
+    }
+
     private fun transaction(
         id: Long,
         type: RecordType,

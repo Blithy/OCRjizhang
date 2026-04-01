@@ -157,6 +157,9 @@ class StatisticsFragment : Fragment() {
         binding.categoryBreakdownContainer.removeAllViews()
 
         if (!hasCategoryData) {
+            binding.categoryChart.data = null
+            binding.categoryChart.centerText = ""
+            binding.categoryChart.highlightValues(null)
             binding.categoryChart.clear()
             return
         }
@@ -198,6 +201,8 @@ class StatisticsFragment : Fragment() {
         binding.trendEmptyText.text = state.trendEmptyText
 
         if (!hasTrendData) {
+            binding.trendChart.data = null
+            binding.trendChart.highlightValues(null)
             binding.trendChart.clear()
             return
         }

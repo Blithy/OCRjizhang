@@ -85,5 +85,33 @@ class StatisticsViewModel @Inject constructor(
                     expenseFen = trend.expenseFen,
                 )
             },
+            emptyTitle = emptyTitleFor(period),
+            emptyBody = emptyBodyFor(period),
+            categoryEmptyText = categoryEmptyTextFor(period),
+            trendEmptyText = trendEmptyTextFor(period),
         )
+
+    private fun emptyTitleFor(period: StatisticsPeriod): String = when (period) {
+        StatisticsPeriod.DAY -> "今天还没有记账数据"
+        StatisticsPeriod.WEEK -> "本周还没有记账数据"
+        StatisticsPeriod.MONTH -> "本月还没有记账数据"
+    }
+
+    private fun emptyBodyFor(period: StatisticsPeriod): String = when (period) {
+        StatisticsPeriod.DAY -> "先记一两笔今天的收入或支出，这里就会自动生成当天统计。"
+        StatisticsPeriod.WEEK -> "先补充本周的几笔记录，这里就会开始展示本周收支概览。"
+        StatisticsPeriod.MONTH -> "先新增本月的几笔记录，这里就会自动汇总月度统计结果。"
+    }
+
+    private fun categoryEmptyTextFor(period: StatisticsPeriod): String = when (period) {
+        StatisticsPeriod.DAY -> "今天还没有可展示的支出分类占比"
+        StatisticsPeriod.WEEK -> "本周还没有可展示的支出分类占比"
+        StatisticsPeriod.MONTH -> "本月还没有可展示的支出分类占比"
+    }
+
+    private fun trendEmptyTextFor(period: StatisticsPeriod): String = when (period) {
+        StatisticsPeriod.DAY -> "今天还没有可展示的收支趋势"
+        StatisticsPeriod.WEEK -> "本周还没有可展示的收支趋势"
+        StatisticsPeriod.MONTH -> "本月还没有可展示的收支趋势"
+    }
 }
