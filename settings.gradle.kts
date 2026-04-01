@@ -22,4 +22,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "OCRjizhang"
 include(":app")
+include(":backend")
  

@@ -76,6 +76,14 @@
                     android:text="@string/profile_sync_subtitle"
                     android:textColor="@color/ink_secondary"
                     android:textSize="14sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/syncButton"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="立即同步" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

@@ -10,8 +10,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.FragmentProfileBinding
-import com.example.ocrjizhang.ui.auth.AuthEvent
 import com.example.ocrjizhang.ui.auth.navigateToLoginClearingBackStack
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -36,16 +36,34 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        binding.syncButton.setOnClickListener {
+            viewModel.syncNow()
+        }
+
         binding.logoutButton.setOnClickListener {
             viewModel.logout()
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.eventFlow.collect { event ->
-                    if (event is AuthEvent.LogoutSuccess) {
-                        Snackbar.make(binding.root, com.example.ocrjizhang.R.string.message_logout_success, Snackbar.LENGTH_SHORT).show()
-                        findNavController().navigateToLoginClearingBackStack()
+                launch {
+                    viewModel.uiState.collect { state ->
+                        binding.syncButton.isEnabled = !state.isSyncing
+                    }
+                }
+
+                launch {
+                    viewModel.eventFlow.collect { event ->
+                        when (event) {
+                            ProfileEvent.LogoutSuccess -> {
+                                Snackbar.make(binding.root, R.string.message_logout_success, Snackbar.LENGTH_SHORT).show()
+                                findNavController().navigateToLoginClearingBackStack()
+                            }
+
+                            is ProfileEvent.Message -> {
+                                Snackbar.make(binding.root, event.value, Snackbar.LENGTH_LONG).show()
+                            }
+                        }
                     }
                 }
             }
