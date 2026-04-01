@@ -2,7 +2,6 @@ package com.example.ocrjizhang.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ocrjizhang.R
 import com.example.ocrjizhang.data.repository.AuthRepository
 import com.example.ocrjizhang.data.repository.DemoAccount
 import dagger.hilt.android.lifecycle.HiltViewModel

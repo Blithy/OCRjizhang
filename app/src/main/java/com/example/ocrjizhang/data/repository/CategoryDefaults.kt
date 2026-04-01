@@ -12,6 +12,7 @@ data class CategorySeedTemplate(
 
 object CategoryDefaults {
     const val UNCATEGORIZED_NAME = "未分类"
+    private const val LEGACY_UNCATEGORIZED_NAME = "鏈垎绫?"
 
     private val templates = listOf(
         CategorySeedTemplate("餐饮", RecordType.EXPENSE),
@@ -29,15 +30,31 @@ object CategoryDefaults {
         CategorySeedTemplate("其他", RecordType.INCOME),
         CategorySeedTemplate(UNCATEGORIZED_NAME, RecordType.INCOME),
     )
+    private val templateCountByType = templates.groupingBy(CategorySeedTemplate::type).eachCount()
 
     fun buildMissingDefaults(
         userId: Long,
         existingCategories: List<CategoryEntity>,
         now: Long = System.currentTimeMillis(),
     ): List<CategoryEntity> {
-        val existingKeys = existingCategories.map { it.type to it.name }.toSet()
+        val existingDefaultCountByType = existingCategories
+            .asSequence()
+            .filter(CategoryEntity::isDefault)
+            .groupingBy(CategoryEntity::type)
+            .eachCount()
+
         return templates
-            .filterNot { (it.type to it.name) in existingKeys }
+            .filterNot { template ->
+                val existingCount = existingDefaultCountByType[template.type] ?: 0
+                val requiredCount = templateCountByType.getValue(template.type)
+                if (existingCount >= requiredCount) {
+                    true
+                } else {
+                    existingCategories.any { category ->
+                        category.type == template.type && category.name == template.name
+                    }
+                }
+            }
             .mapIndexed { index, template ->
                 CategoryEntity(
                     id = LocalIdGenerator.nextId(),
@@ -53,4 +70,7 @@ object CategoryDefaults {
                 )
             }
     }
+
+    fun uncategorizedAliases(): List<String> =
+        listOf(UNCATEGORIZED_NAME, LEGACY_UNCATEGORIZED_NAME).distinct()
 }

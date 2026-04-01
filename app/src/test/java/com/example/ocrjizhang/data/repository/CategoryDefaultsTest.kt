@@ -63,4 +63,68 @@ class CategoryDefaultsTest {
         assertTrue(result.none { it.type == RecordType.EXPENSE && it.name == "餐饮" })
         assertTrue(result.none { it.type == RecordType.INCOME && it.name == CategoryDefaults.UNCATEGORIZED_NAME })
     }
+
+    @Test
+    fun `buildMissingDefaults skips reseeding when legacy default count is already complete`() {
+        val legacyExpenseDefaults = listOf(
+            "椁愰ギ",
+            "浜ら€?",
+            "璐墿",
+            "鏃ョ敤",
+            "濞变箰",
+            "鍖荤枟",
+            "浣忔埧",
+            "鏈垎绫?",
+        )
+        val legacyIncomeDefaults = listOf(
+            "宸ヨ祫",
+            "濂栭噾",
+            "鍏艰亴",
+            "鐞嗚储",
+            "鍏朵粬",
+            "鏈垎绫?",
+        )
+        val existing = buildList {
+            legacyExpenseDefaults.forEachIndexed { index, name ->
+                add(
+                    CategoryEntity(
+                        id = index + 1L,
+                        userId = 11L,
+                        name = name,
+                        type = RecordType.EXPENSE,
+                        icon = null,
+                        color = null,
+                        isDefault = true,
+                        createdAt = 1L,
+                        updatedAt = 1L,
+                        syncStatus = SyncStatus.SYNCED,
+                    ),
+                )
+            }
+            legacyIncomeDefaults.forEachIndexed { index, name ->
+                add(
+                    CategoryEntity(
+                        id = index + 101L,
+                        userId = 11L,
+                        name = name,
+                        type = RecordType.INCOME,
+                        icon = null,
+                        color = null,
+                        isDefault = true,
+                        createdAt = 1L,
+                        updatedAt = 1L,
+                        syncStatus = SyncStatus.SYNCED,
+                    ),
+                )
+            }
+        }
+
+        val result = CategoryDefaults.buildMissingDefaults(
+            userId = 11L,
+            existingCategories = existing,
+            now = 3_000L,
+        )
+
+        assertTrue(result.isEmpty())
+    }
 }

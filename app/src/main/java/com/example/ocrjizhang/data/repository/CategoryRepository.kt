@@ -107,11 +107,14 @@ class CategoryRepository @Inject constructor(
             error("默认分类不能删除")
         }
 
-        val fallbackCategory = categoryDao.findByExactName(
+        val fallbackCategory = categoryDao.findByNames(
             userId = userId,
             type = category.type,
-            name = CategoryDefaults.UNCATEGORIZED_NAME,
-        ) ?: error("未找到默认“未分类”类别")
+            names = CategoryDefaults.uncategorizedAliases(),
+        ) ?: categoryDao.findFirstDefaultCategory(
+            userId = userId,
+            type = category.type,
+        ) ?: error("未找到可用的默认分类")
 
         val now = System.currentTimeMillis()
         database.withTransaction {

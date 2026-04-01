@@ -37,6 +37,26 @@ interface CategoryDao {
     )
     suspend fun findByExactName(userId: Long, type: RecordType, name: String): CategoryEntity?
 
+    @Query(
+        """
+        SELECT * FROM categories
+        WHERE userId = :userId AND type = :type AND name IN (:names)
+        ORDER BY isDefault DESC, name ASC
+        LIMIT 1
+        """
+    )
+    suspend fun findByNames(userId: Long, type: RecordType, names: List<String>): CategoryEntity?
+
+    @Query(
+        """
+        SELECT * FROM categories
+        WHERE userId = :userId AND type = :type AND isDefault = 1
+        ORDER BY name ASC
+        LIMIT 1
+        """
+    )
+    suspend fun findFirstDefaultCategory(userId: Long, type: RecordType): CategoryEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(category: CategoryEntity)
 

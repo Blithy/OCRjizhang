@@ -19,9 +19,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 data class HomeUiState(
-    val incomeLabel: String = "收入 ￥0.00",
-    val expenseLabel: String = "支出 ￥0.00",
-    val surplusLabel: String = "结余 ￥0.00",
+    val incomeLabel: String = "收入 ¥0.00",
+    val expenseLabel: String = "支出 ¥0.00",
+    val surplusLabel: String = "结余 ¥0.00",
     val recentTransactions: List<TransactionListItem> = emptyList(),
     val recentEmptyTitle: String = "",
     val recentEmptyBody: String = "",
