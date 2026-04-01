@@ -120,6 +120,17 @@ object OcrReceiptParser {
         "\u62fc\u591a\u591a",
     )
 
+    private val merchantPromoKeywords = listOf(
+        "\u5916\u5356",
+        "\u56e2\u8d2d",
+        "\u7279\u4ef7",
+        "\u559c\u6b22",
+        "\u597d\u8bc4",
+        "\u70ed\u5356",
+        "\u7206\u6b3e",
+        "\u751f\u6d3b\u5e2e\u624b",
+    )
+
     fun parse(rawText: String): ParsedReceiptData {
         val lines = rawText.lineSequence()
             .map(::normalizeLine)
@@ -308,6 +319,12 @@ object OcrReceiptParser {
                 if (merchantPlatformNames.contains(normalizedMerchant)) {
                     return@forEachIndexed
                 }
+                if (merchantPromoKeywords.any { keyword ->
+                        normalizedMerchant.contains(keyword, ignoreCase = true)
+                    }
+                ) {
+                    return@forEachIndexed
+                }
 
                 val digitCount = normalizedMerchant.count(Char::isDigit)
                 val letterOrChineseCount = normalizedMerchant.count { character ->
@@ -330,8 +347,14 @@ object OcrReceiptParser {
                 if (normalizedMerchant.contains('(') || normalizedMerchant.contains('\uff08')) {
                     score += 35
                 }
+                if (normalizedMerchant.contains('\u5e97')) {
+                    score += 20
+                }
                 if (normalizedMerchant.length >= 8) {
                     score += 15
+                }
+                if (amountLineIndex != null && index > amountLineIndex) {
+                    score += 18
                 }
                 if (amountLineIndex != null && index < amountLineIndex) {
                     score += 10
