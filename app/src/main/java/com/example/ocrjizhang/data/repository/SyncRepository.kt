@@ -44,6 +44,7 @@ class SyncRepository @Inject constructor(
     suspend fun syncNow(): Result<SyncResult> = runCatching {
         val session = sessionManager.sessionFlow.first()
         val userId = session.userId ?: error("当前还没有登录账号")
+        compactLocalCategories(userId)
         val pendingOperations = syncOperationDao.getPendingOperations()
         val pushRequest = buildPushRequest(pendingOperations)
 
@@ -62,14 +63,36 @@ class SyncRepository @Inject constructor(
             error(pullResponse.msg.ifBlank { "同步拉取失败" })
         }
 
-        val payload = pullResponse.data
+        var payload = pullResponse.data
+        var uploadedCount = pendingOperations.size
+
+        if (
+            pendingOperations.isEmpty() &&
+            payload.categories.isEmpty() &&
+            payload.transactions.isEmpty()
+        ) {
+            val fullPushRequest = buildFullSyncPushRequest(userId)
+            if (fullPushRequest.hasChanges()) {
+                val fullPushResponse = syncService.pushChanges(fullPushRequest)
+                if (fullPushResponse.code != 0) {
+                    error(fullPushResponse.msg.ifBlank { "首次全量同步失败" })
+                }
+                uploadedCount = fullPushRequest.totalItemCount()
+                val refreshedPullResponse = syncService.pullChanges(SyncPullRequest(lastSyncTime = 0L))
+                if (refreshedPullResponse.code != 0 || refreshedPullResponse.data == null) {
+                    error(refreshedPullResponse.msg.ifBlank { "同步拉取失败" })
+                }
+                payload = refreshedPullResponse.data
+            }
+        }
+
         val hasRemoteData = payload.categories.isNotEmpty() || payload.transactions.isNotEmpty()
         if (hasRemoteData || pendingOperations.isNotEmpty()) {
             applyRemoteSnapshot(userId, payload)
         }
 
         SyncResult(
-            pushedCount = pendingOperations.size,
+            pushedCount = uploadedCount,
             categoryCount = if (hasRemoteData || pendingOperations.isNotEmpty()) payload.categories.size else 0,
             transactionCount = if (hasRemoteData || pendingOperations.isNotEmpty()) payload.transactions.size else 0,
         )
@@ -143,6 +166,15 @@ class SyncRepository @Inject constructor(
         )
     }
 
+    private suspend fun buildFullSyncPushRequest(userId: Long): SyncPushRequest {
+        val categories = categoryDao.getCategories(userId).map(::toCategoryDto)
+        val transactions = transactionDao.getTransactions(userId).map(::toTransactionDto)
+        return SyncPushRequest(
+            createCategories = categories,
+            createTransactions = transactions,
+        )
+    }
+
     private fun SyncPushRequest.hasChanges(): Boolean =
         createCategories.isNotEmpty() ||
             updateCategories.isNotEmpty() ||
@@ -150,6 +182,52 @@ class SyncRepository @Inject constructor(
             createTransactions.isNotEmpty() ||
             updateTransactions.isNotEmpty() ||
             deleteTransactionIds.isNotEmpty()
+
+    private fun SyncPushRequest.totalItemCount(): Int =
+        createCategories.size +
+            updateCategories.size +
+            deleteCategoryIds.size +
+            createTransactions.size +
+            updateTransactions.size +
+            deleteTransactionIds.size
+
+    private suspend fun compactLocalCategories(userId: Long) {
+        val categories = categoryDao.getCategories(userId)
+        val duplicateGroups = categories
+            .groupBy { "${it.type.name}|${it.name.lowercase()}" }
+            .values
+            .filter { it.size > 1 }
+
+        if (duplicateGroups.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+        database.withTransaction {
+            duplicateGroups.forEach { group ->
+                val canonical = group
+                    .sortedWith(
+                        compareByDescending<CategoryEntity> { it.isDefault }
+                            .thenByDescending { it.updatedAt }
+                            .thenBy { it.createdAt }
+                            .thenBy { it.id },
+                    )
+                    .first()
+
+                group
+                    .filter { it.id != canonical.id }
+                    .forEach { duplicate ->
+                        transactionDao.reassignCategory(
+                            userId = userId,
+                            oldCategoryId = duplicate.id,
+                            newCategoryId = canonical.id,
+                            newCategoryName = canonical.name,
+                            updatedAt = now,
+                            syncStatus = SyncStatus.SYNCED,
+                        )
+                        categoryDao.deleteById(duplicate.id)
+                    }
+            }
+        }
+    }
 
     private fun toCategoryDto(entity: CategoryEntity): CategoryDto =
         CategoryDto(

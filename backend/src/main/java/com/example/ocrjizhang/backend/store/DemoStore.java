@@ -9,6 +9,7 @@ import com.example.ocrjizhang.backend.api.SyncPushRequest;
 import com.example.ocrjizhang.backend.api.TransactionDto;
 import com.example.ocrjizhang.backend.api.UpdateCurrentUserRequest;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -122,6 +123,7 @@ public class DemoStore {
     }
 
     public List<CategoryDto> getCategories(long userId) {
+        compactCategories(userId);
         return categoriesById.values().stream()
             .filter(category -> category.userId() == userId)
             .sorted(Comparator.comparing(CategoryDto::isDefault).reversed().thenComparing(CategoryDto::name))
@@ -136,18 +138,27 @@ public class DemoStore {
             throw new IllegalArgumentException("分类 ID 不一致");
         }
 
+        String normalizedName = requireText(request.name(), "分类名称不能为空").trim();
+        String normalizedType = requireText(request.type(), "分类类型不能为空").trim().toUpperCase(Locale.ROOT);
+        CategoryDto existingByName = findCategoryByNameAndType(userId, normalizedName, normalizedType);
+        long canonicalId = existingByName != null ? existingByName.id() : request.id();
+
         CategoryDto category = new CategoryDto(
-            request.id(),
+            canonicalId,
             userId,
-            requireText(request.name(), "分类名称不能为空").trim(),
-            requireText(request.type(), "分类类型不能为空").trim().toUpperCase(Locale.ROOT),
+            normalizedName,
+            normalizedType,
             blankToNull(request.icon()),
             blankToNull(request.color()),
             request.isDefault(),
-            request.createdAt(),
+            existingByName != null ? existingByName.createdAt() : request.createdAt(),
             normalizeUpdatedAt(request.updatedAt())
         );
-        categoriesById.put(category.id(), category);
+        categoriesById.put(canonicalId, category);
+        if (existingByName != null && existingByName.id() != canonicalId) {
+            categoriesById.remove(existingByName.id());
+            remapTransactionCategory(userId, existingByName.id(), canonicalId, normalizedName);
+        }
         return category;
     }
 
@@ -160,6 +171,7 @@ public class DemoStore {
     }
 
     public List<TransactionDto> getTransactions(long userId, Long startTime, Long endTime, String type) {
+        compactCategories(userId);
         return transactionsById.values().stream()
             .filter(transaction -> transaction.userId() == userId)
             .filter(transaction -> startTime == null || transaction.transactionTime() >= startTime)
@@ -182,13 +194,19 @@ public class DemoStore {
             throw new IllegalArgumentException("交易 ID 不一致");
         }
 
+        String normalizedType = requireText(request.type(), "交易类型不能为空").trim().toUpperCase(Locale.ROOT);
+        String normalizedCategoryName = requireText(request.categoryName(), "分类名称不能为空").trim();
+        CategoryDto canonicalCategory = findCategoryByNameAndType(userId, normalizedCategoryName, normalizedType);
+        long categoryId = canonicalCategory != null ? canonicalCategory.id() : request.categoryId();
+        String categoryName = canonicalCategory != null ? canonicalCategory.name() : normalizedCategoryName;
+
         TransactionDto transaction = new TransactionDto(
             request.id(),
             userId,
-            requireText(request.type(), "交易类型不能为空").trim().toUpperCase(Locale.ROOT),
+            normalizedType,
             request.amountFen(),
-            request.categoryId(),
-            requireText(request.categoryName(), "分类名称不能为空").trim(),
+            categoryId,
+            categoryName,
             blankToNull(request.remark()),
             blankToNull(request.merchantName()),
             request.transactionTime(),
@@ -222,6 +240,7 @@ public class DemoStore {
     }
 
     public SyncPullPayloadDto pullAll(long userId) {
+        compactCategories(userId);
         return new SyncPullPayloadDto(
             getCategories(userId),
             getTransactions(userId, null, null, null),
@@ -276,5 +295,59 @@ public class DemoStore {
 
     private static String normalizeUsername(String username) {
         return username.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private CategoryDto findCategoryByNameAndType(long userId, String name, String type) {
+        return categoriesById.values().stream()
+            .filter(category -> category.userId() == userId)
+            .filter(category -> category.type().equalsIgnoreCase(type))
+            .filter(category -> category.name().equalsIgnoreCase(name))
+            .findFirst()
+            .orElse(null);
+    }
+
+    private void compactCategories(long userId) {
+        Map<String, CategoryDto> canonicalByKey = new LinkedHashMap<>();
+        categoriesById.values().stream()
+            .filter(category -> category.userId() == userId)
+            .sorted(Comparator
+                .comparing(CategoryDto::isDefault).reversed()
+                .thenComparingLong(CategoryDto::updatedAt).reversed()
+                .thenComparingLong(CategoryDto::createdAt))
+            .forEach(category -> {
+                String key = category.userId() + "|" + category.type().toUpperCase(Locale.ROOT) + "|" + category.name().toLowerCase(Locale.ROOT);
+                CategoryDto canonical = canonicalByKey.get(key);
+                if (canonical == null) {
+                    canonicalByKey.put(key, category);
+                } else if (canonical.id() != category.id()) {
+                    remapTransactionCategory(userId, category.id(), canonical.id(), canonical.name());
+                    categoriesById.remove(category.id());
+                }
+            });
+    }
+
+    private void remapTransactionCategory(long userId, long fromCategoryId, long toCategoryId, String categoryName) {
+        if (fromCategoryId == toCategoryId) {
+            return;
+        }
+        transactionsById.replaceAll((transactionId, transaction) -> {
+            if (transaction.userId() != userId || transaction.categoryId() != fromCategoryId) {
+                return transaction;
+            }
+            return new TransactionDto(
+                transaction.id(),
+                transaction.userId(),
+                transaction.type(),
+                transaction.amountFen(),
+                toCategoryId,
+                categoryName,
+                transaction.remark(),
+                transaction.merchantName(),
+                transaction.transactionTime(),
+                transaction.source(),
+                transaction.createdAt(),
+                transaction.updatedAt()
+            );
+        });
     }
 }

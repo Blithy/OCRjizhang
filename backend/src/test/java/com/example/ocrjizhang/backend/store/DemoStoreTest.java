@@ -58,4 +58,48 @@ class DemoStoreTest {
         assertEquals(1, payload.transactions().size());
         assertEquals("鹿角巷", payload.transactions().get(0).merchantName());
     }
+
+    @Test
+    void duplicateCategoriesShouldCompactAndRemapTransactions() {
+        var registered = demoStore.register(
+            new RegisterRequest("dedupe-user", "123456", null, null, "去重用户")
+        );
+
+        demoStore.applySyncPush(
+            registered.userId(),
+            new SyncPushRequest(
+                List.of(
+                    new CategoryDto(101L, registered.userId(), "餐饮", "EXPENSE", null, null, true, 1L, 10L),
+                    new CategoryDto(202L, registered.userId(), "餐饮", "EXPENSE", null, null, false, 2L, 20L)
+                ),
+                List.of(),
+                List.of(),
+                List.of(
+                    new TransactionDto(
+                        301L,
+                        registered.userId(),
+                        "EXPENSE",
+                        3294L,
+                        202L,
+                        "餐饮",
+                        "外卖",
+                        "鹿角巷",
+                        30L,
+                        "MANUAL",
+                        3L,
+                        30L
+                    )
+                ),
+                List.of(),
+                List.of()
+            )
+        );
+
+        var payload = demoStore.pullAll(registered.userId());
+        assertEquals(1, payload.categories().size());
+        assertEquals(101L, payload.categories().get(0).id());
+        assertEquals(1, payload.transactions().size());
+        assertEquals(101L, payload.transactions().get(0).categoryId());
+        assertEquals("餐饮", payload.transactions().get(0).categoryName());
+    }
 }

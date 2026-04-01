@@ -5,6 +5,7 @@ import com.example.ocrjizhang.data.local.entity.RecordType
 import com.example.ocrjizhang.data.local.entity.SyncStatus
 import com.example.ocrjizhang.utils.LocalIdGenerator
 import java.nio.charset.Charset
+import kotlin.math.absoluteValue
 
 data class CategorySeedTemplate(
     val name: String,
@@ -58,7 +59,7 @@ object CategoryDefaults {
             }
             .mapIndexed { index, template ->
                 CategoryEntity(
-                    id = LocalIdGenerator.nextId(),
+                    id = stableDefaultCategoryId(userId, template),
                     userId = userId,
                     name = template.name,
                     type = template.type,
@@ -77,4 +78,15 @@ object CategoryDefaults {
 
     fun uncategorizedAliases(): List<String> =
         listOf(UNCATEGORIZED_NAME, legacyAliasOf(UNCATEGORIZED_NAME)).distinct()
+
+    private fun stableDefaultCategoryId(userId: Long, template: CategorySeedTemplate): Long {
+        val seed = "${userId}|${template.type.name}|${template.name}"
+        var hash = 1469598103934665603L
+        seed.forEach { char ->
+            hash = hash xor char.code.toLong()
+            hash *= 1099511628211L
+        }
+        val normalized = (hash and Long.MAX_VALUE).absoluteValue
+        return if (normalized == 0L) LocalIdGenerator.nextId() else normalized
+    }
 }

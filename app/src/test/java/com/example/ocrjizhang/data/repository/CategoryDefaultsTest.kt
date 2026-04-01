@@ -22,6 +22,7 @@ class CategoryDefaultsTest {
         assertTrue(result.any { it.type == RecordType.INCOME && it.name == CategoryDefaults.UNCATEGORIZED_NAME })
         assertTrue(result.all { it.isDefault })
         assertTrue(result.all { it.syncStatus == SyncStatus.PENDING_CREATE })
+        assertEquals(result.map { it.id }.distinct().size, result.size)
     }
 
     @Test
@@ -126,5 +127,27 @@ class CategoryDefaultsTest {
         )
 
         assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `buildMissingDefaults uses stable ids for same user`() {
+        val first = CategoryDefaults.buildMissingDefaults(
+            userId = 21L,
+            existingCategories = emptyList(),
+            now = 1_000L,
+        )
+        val second = CategoryDefaults.buildMissingDefaults(
+            userId = 21L,
+            existingCategories = emptyList(),
+            now = 9_000L,
+        )
+        val third = CategoryDefaults.buildMissingDefaults(
+            userId = 22L,
+            existingCategories = emptyList(),
+            now = 9_000L,
+        )
+
+        assertEquals(first.map { it.id }, second.map { it.id })
+        assertTrue(first.map { it.id } != third.map { it.id })
     }
 }
