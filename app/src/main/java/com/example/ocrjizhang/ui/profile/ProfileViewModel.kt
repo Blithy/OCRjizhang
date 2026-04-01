@@ -40,10 +40,15 @@ class ProfileViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isSyncing = true)
             val message = syncRepository.syncNow().fold(
                 onSuccess = { result ->
-                    if (result.pushedCount == 0 && result.categoryCount == 0 && result.transactionCount == 0) {
-                        "当前没有新的本地改动，远端也还没有数据。"
-                    } else {
-                        "同步完成：上传 ${result.pushedCount} 条，本地回写 ${result.categoryCount} 个分类、${result.transactionCount} 条交易。"
+                    when {
+                        result.pushedCount == 0 && result.categoryCount == 0 && result.transactionCount == 0 ->
+                            "当前没有新的本地改动，演示后端也还没有数据。"
+
+                        result.pushedCount == 0 ->
+                            "同步完成：当前云端有 ${result.categoryCount} 个分类、${result.transactionCount} 条交易，本次没有新的本地改动。"
+
+                        else ->
+                            "同步完成：已上传 ${result.pushedCount} 条本地变更，当前云端共 ${result.categoryCount} 个分类、${result.transactionCount} 条交易。"
                     }
                 },
                 onFailure = { throwable ->
