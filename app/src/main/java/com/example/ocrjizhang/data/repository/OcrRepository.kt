@@ -9,6 +9,7 @@ import com.example.ocrjizhang.data.ocr.OcrStructuredResult
 import com.example.ocrjizhang.data.ocr.PaddleOcrNative
 import com.example.ocrjizhang.utils.LocalIdGenerator
 import com.example.ocrjizhang.utils.OcrReceiptParser
+import com.example.ocrjizhang.utils.PaymentScreenshotParser
 import com.example.ocrjizhang.utils.ParsedReceiptData
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -69,7 +70,11 @@ class OcrRepository @Inject constructor(
 
     suspend fun recognizeImage(imagePath: String): OcrRecognitionResult = withContext(Dispatchers.IO) {
         val structuredResult = recognizeStructured(imagePath)
-        val parsedData = OcrReceiptParser.parse(structuredResult.rawText)
+        val fallbackParsedData = OcrReceiptParser.parse(structuredResult.rawText)
+        val parsedData = PaymentScreenshotParser.parse(
+            lines = structuredResult.lines,
+            fallback = fallbackParsedData,
+        ) ?: fallbackParsedData
         val result = OcrRecognitionResult(
             imagePath = imagePath,
             rawText = structuredResult.rawText,
