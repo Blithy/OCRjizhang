@@ -3,7 +3,9 @@ package com.example.ocrjizhang.data.repository
 import android.content.Context
 import com.example.ocrjizhang.data.local.dao.OcrRecordDao
 import com.example.ocrjizhang.data.local.entity.OcrRecordEntity
+import com.example.ocrjizhang.data.ocr.OcrLine
 import com.example.ocrjizhang.data.ocr.MlKitOcrEngine
+import com.example.ocrjizhang.data.ocr.OcrStructuredResult
 import com.example.ocrjizhang.data.ocr.PaddleOcrNative
 import com.example.ocrjizhang.utils.LocalIdGenerator
 import com.example.ocrjizhang.utils.OcrReceiptParser
@@ -21,6 +23,7 @@ import kotlinx.coroutines.withContext
 data class OcrRecognitionResult(
     val imagePath: String,
     val rawText: String,
+    val structuredLines: List<OcrLine>,
     val parsedData: ParsedReceiptData,
 )
 
@@ -65,11 +68,12 @@ class OcrRepository @Inject constructor(
     suspend fun getCurrentUserId(): Long? = sessionManager.sessionFlow.first().userId
 
     suspend fun recognizeImage(imagePath: String): OcrRecognitionResult = withContext(Dispatchers.IO) {
-        val rawText = recognizeRawText(imagePath)
-        val parsedData = OcrReceiptParser.parse(rawText)
+        val structuredResult = recognizeStructured(imagePath)
+        val parsedData = OcrReceiptParser.parse(structuredResult.rawText)
         val result = OcrRecognitionResult(
             imagePath = imagePath,
-            rawText = rawText,
+            rawText = structuredResult.rawText,
+            structuredLines = structuredResult.lines,
             parsedData = parsedData,
         )
 
@@ -79,15 +83,19 @@ class OcrRepository @Inject constructor(
         result
     }
 
-    private suspend fun recognizeRawText(imagePath: String): String {
-        val mlKitText = runCatching { mlKitOcrEngine.recognize(imagePath).trim() }
-            .getOrDefault("")
-        if (mlKitText.isNotBlank()) {
-            return mlKitText
+    private suspend fun recognizeStructured(imagePath: String): OcrStructuredResult {
+        val mlKitResult = runCatching { mlKitOcrEngine.recognize(imagePath) }
+            .getOrNull()
+        if (mlKitResult != null && mlKitResult.rawText.isNotBlank()) {
+            return mlKitResult
         }
 
         val runtimeDir = ensureRuntimeFiles()
-        return paddleOcrNative.recognize(imagePath, runtimeDir.absolutePath).trim()
+        val rawText = paddleOcrNative.recognize(imagePath, runtimeDir.absolutePath).trim()
+        return OcrStructuredResult(
+            rawText = rawText,
+            lines = emptyList(),
+        )
     }
 
     private suspend fun saveRecord(userId: Long, result: OcrRecognitionResult) {

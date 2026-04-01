@@ -34,7 +34,8 @@ class ExampleInstrumentedTest {
             MlKitOcrEngine().recognize(imageFile.absolutePath)
         }
 
-        Log.d("ExampleInstrumentedTest", "OCR result:\n$recognizedText")
-        assertTrue("OCR result should not be blank", recognizedText.isNotBlank())
+        Log.d("ExampleInstrumentedTest", "OCR result:\n${recognizedText.rawText}")
+        assertTrue("OCR result should not be blank", recognizedText.rawText.isNotBlank())
+        assertTrue("OCR structured lines should not be empty", recognizedText.lines.isNotEmpty())
     }
 }
