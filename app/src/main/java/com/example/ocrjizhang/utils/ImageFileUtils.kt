@@ -33,10 +33,12 @@ object ImageFileUtils {
     }
 
     suspend fun copyUriToCache(context: Context, uri: Uri): File = withContext(Dispatchers.IO) {
-        val outputFile = File(
-            context.cacheDir,
-            "ocr-${System.currentTimeMillis()}.jpg",
-        )
+        val outputFormat = resolveOutputFormat(context, uri)
+        val outputExtension = when (outputFormat) {
+            Bitmap.CompressFormat.PNG -> "png"
+            else -> "jpg"
+        }
+        val outputFile = File(context.cacheDir, "ocr-${System.currentTimeMillis()}.$outputExtension")
 
         val normalizedBitmap = when (uri.scheme) {
             "file" -> {
@@ -67,11 +69,40 @@ object ImageFileUtils {
         }
 
         FileOutputStream(outputFile).use { outputStream ->
-            normalizedBitmap.compress(Bitmap.CompressFormat.JPEG, NormalizedJpegQuality, outputStream)
+            when (outputFormat) {
+                Bitmap.CompressFormat.PNG -> {
+                    normalizedBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                }
+
+                else -> {
+                    normalizedBitmap.compress(
+                        Bitmap.CompressFormat.JPEG,
+                        NormalizedJpegQuality,
+                        outputStream,
+                    )
+                }
+            }
         }
         normalizedBitmap.recycle()
 
         outputFile
+    }
+
+    private fun resolveOutputFormat(context: Context, uri: Uri): Bitmap.CompressFormat {
+        val mimeType = context.contentResolver.getType(uri)?.lowercase().orEmpty()
+        if (mimeType.contains("png")) {
+            return Bitmap.CompressFormat.PNG
+        }
+
+        val extension = when (uri.scheme) {
+            "file" -> uri.toFile().extension.lowercase()
+            else -> uri.lastPathSegment?.substringAfterLast('.', "").orEmpty().lowercase()
+        }
+        return if (extension == "png") {
+            Bitmap.CompressFormat.PNG
+        } else {
+            Bitmap.CompressFormat.JPEG
+        }
     }
 
     private fun decodeBitmapFromFile(file: File): Bitmap? {

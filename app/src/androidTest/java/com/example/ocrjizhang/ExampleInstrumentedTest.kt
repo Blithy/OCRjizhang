@@ -3,12 +3,13 @@ package com.example.ocrjizhang
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.example.ocrjizhang.data.ocr.PaddleOcrNative
+import com.example.ocrjizhang.data.ocr.MlKitOcrEngine
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlinx.coroutines.runBlocking
 
 @RunWith(AndroidJUnit4::class)
 class ExampleInstrumentedTest {
@@ -29,23 +30,9 @@ class ExampleInstrumentedTest {
             imageFile.exists(),
         )
 
-        val runtimeDir = File(appContext.filesDir, "ocr_runtime_instrumented").apply {
-            deleteRecursively()
-            mkdirs()
+        val recognizedText = runBlocking {
+            MlKitOcrEngine().recognize(imageFile.absolutePath)
         }
-
-        appContext.assets.list("ocr").orEmpty().forEach { assetName ->
-            appContext.assets.open("ocr/$assetName").use { input ->
-                File(runtimeDir, assetName).outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-        }
-
-        val recognizedText = PaddleOcrNative().recognize(
-            imagePath = imageFile.absolutePath,
-            runtimeDir = runtimeDir.absolutePath,
-        )
 
         Log.d("ExampleInstrumentedTest", "OCR result:\n$recognizedText")
         assertTrue("OCR result should not be blank", recognizedText.isNotBlank())

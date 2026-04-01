@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import kotlin.math.abs
 import java.util.Locale
 
 data class ParsedReceiptData(
@@ -17,94 +18,106 @@ data class ParsedReceiptData(
 
 object OcrReceiptParser {
 
-    private val amountKeywords = listOf(
-        "合计",
-        "总计",
-        "小计",
-        "应付",
-        "实付",
-        "实收",
-        "支付",
-        "金额",
-        "消费",
-        "total",
-        "amount",
-        "amt",
+    private val amountRegex = Regex(
+        pattern = """(?<!\d)([-+]?\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|[-+]?\d{1,7}(?:\.\d{1,2})?)(?!\d)""",
     )
 
-    private val amountNegativeKeywords = listOf(
-        "找零",
-        "优惠",
-        "折扣",
-        "抹零",
-        "减免",
-        "退款",
-        "返现",
+    private val dateRegex = Regex(
+        pattern = """20\d{2}\s*[./\-\u5e74]\s*\d{1,2}\s*[./\-\u6708]\s*\d{1,2}(?:\s*\u65e5)?(?:\s*\d{1,2}:\d{2}(?::\d{2})?)?""",
+    )
+
+    private val timeOnlyRegex = Regex(
+        pattern = """^\d{1,2}:\d{2}(?::\d{2})?$""",
+    )
+
+    private val decimalAmountRegex = Regex(
+        pattern = """[-+]?\d+\.\d{1,2}""",
+    )
+
+    private val amountKeywords = listOf(
+        "amount",
+        "amt",
+        "total",
+        "\u5408\u8ba1",
+        "\u603b\u8ba1",
+        "\u5c0f\u8ba1",
+        "\u5e94\u4ed8",
+        "\u5b9e\u4ed8",
+        "\u5b9e\u6536",
+        "\u91d1\u989d",
+        "\u4ea4\u6613\u91d1\u989d",
+        "\u652f\u4ed8\u91d1\u989d",
+        "\u652f\u51fa",
+        "\u6536\u5165",
+        "\u6263\u6b3e",
+    )
+
+    private val amountPenaltyKeywords = listOf(
         "coupon",
         "discount",
         "change",
+        "\u4f18\u60e0",
+        "\u627e\u96f6",
+        "\u6298\u6263",
+        "\u51cf\u514d",
+        "\u8fd4\u73b0",
+    )
+
+    private val dateKeywords = listOf(
+        "date",
+        "time",
+        "\u65e5\u671f",
+        "\u65f6\u95f4",
+        "\u4ea4\u6613\u65f6\u95f4",
     )
 
     private val merchantStopWords = listOf(
-        "欢迎",
-        "谢谢",
-        "合计",
-        "总计",
-        "小计",
-        "应付",
-        "实付",
-        "金额",
-        "日期",
-        "时间",
-        "收银",
-        "交易",
-        "订单",
-        "票据",
-        "发票",
-        "支付宝",
-        "微信",
-        "银行",
-        "电话",
-        "服务热线",
-        "tel",
-        "url",
+        "\u4ea4\u6613\u8be6\u60c5",
+        "\u5f53\u524d\u72b6\u6001",
+        "\u652f\u4ed8\u6210\u529f",
+        "\u5c0f\u7a0b\u5e8f",
+        "\u89c6\u9891\u53f7",
+        "\u559c\u6b22",
+        "\u670d\u52a1",
+        "\u4ea4\u6613\u670d\u52a1",
+        "\u5546\u54c1",
+        "\u6536\u5355\u673a\u6784",
+        "\u652f\u4ed8\u65b9\u5f0f",
+        "\u4ea4\u6613\u5355\u53f7",
+        "\u5546\u6237\u5355\u53f7",
+        "\u72b6\u6001",
+        "\u65f6\u95f4",
+        "\u96f6\u94b1",
+        "\u5bf9\u65b9",
+        "\u901a\u77e5",
+        "\u632f\u52a8",
+        "\u7279\u4ef7\u5916\u5356\u56e2\u8d2d",
+        "\u7f8e\u597d\u751f\u6d3b\u5e2e\u624b",
         "http",
-        "税号",
-        "机器号",
-        "流水号",
+        "www",
     )
 
     private val merchantKeywords = listOf(
-        "店",
-        "超市",
-        "便利店",
-        "餐厅",
-        "饭店",
-        "咖啡",
-        "药房",
-        "生活",
-        "百货",
-        "商行",
-        "有限公司",
-        "公司",
-    )
-
-    private val dateKeywordRegex = Regex("日期|时间|交易时间|消费时间")
-    private val noisyMerchantRegex = Regex("""[0-9A-Za-z]{8,}|^\d+$""")
-    private val amountRegex = Regex("""(?<!\d)(\d{1,7}(?:[.,]\d{1,2})?)(?!\d)""")
-    private val dateRegex = Regex(
-        """(20\d{2}\s*[./年-]\s*\d{1,2}\s*[./月-]\s*\d{1,2}\s*(?:日)?(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)""",
+        "\u516c\u53f8",
+        "\u6709\u9650\u516c\u53f8",
+        "\u8d85\u5e02",
+        "\u996d\u5e97",
+        "\u9910\u5385",
+        "\u5e97",
+        "\u7f8e\u56e2",
+        "\u5fae\u4fe1",
+        "\u652f\u4ed8\u5b9d",
     )
 
     fun parse(rawText: String): ParsedReceiptData {
         val lines = rawText.lineSequence()
-            .map(String::trim)
+            .map(::normalizeLine)
             .filter(String::isNotBlank)
             .toList()
 
         val amount = extractBestAmount(lines)
         val date = extractBestDate(lines)
-        val merchant = extractMerchant(lines)
+        val merchant = extractMerchant(lines, amount?.lineIndex)
 
         return ParsedReceiptData(
             amountText = amount?.normalizedText,
@@ -118,11 +131,15 @@ object OcrReceiptParser {
     fun parseDateToMillis(rawDate: String?): Long? {
         val normalized = rawDate
             ?.trim()
-            ?.replace("年", "-")
-            ?.replace("月", "-")
-            ?.replace("日", "")
+            ?.replace("\u5e74", "-")
+            ?.replace("\u6708", "-")
+            ?.replace("\u65e5", "")
             ?.replace("/", "-")
             ?.replace(".", "-")
+            ?.replace(
+                Regex("""^(\d{4}-\d{1,2}-\d{1,2})(\d{1,2}:\d{2}(?::\d{2})?)$"""),
+                "$1 $2",
+            )
             ?.replace(Regex("\\s+"), " ")
             ?.takeIf { it.isNotBlank() }
             ?: return null
@@ -143,69 +160,81 @@ object OcrReceiptParser {
             }
         }
 
-        val dateFormats = listOf(
-            DateTimeFormatter.ofPattern("yyyy-M-d", Locale.CHINA),
-        )
-        dateFormats.forEach { formatter ->
-            try {
-                return LocalDate.parse(normalized, formatter)
-                    .atTime(12, 0)
-                    .atZone(zoneId)
-                    .toInstant()
-                    .toEpochMilli()
-            } catch (_: DateTimeParseException) {
-                // Try next formatter.
-            }
+        try {
+            return LocalDate.parse(normalized, DateTimeFormatter.ofPattern("yyyy-M-d", Locale.CHINA))
+                .atTime(12, 0)
+                .atZone(zoneId)
+                .toInstant()
+                .toEpochMilli()
+        } catch (_: DateTimeParseException) {
+            return null
         }
-
-        return null
     }
+
+    private fun normalizeLine(line: String): String = line
+        .replace('\u00a0', ' ')
+        .replace(Regex("""\s+"""), " ")
+        .trim()
 
     private fun extractBestAmount(lines: List<String>): AmountCandidate? {
         val candidates = buildList {
             lines.forEachIndexed { index, line ->
                 val lowerCaseLine = line.lowercase(Locale.ROOT)
                 val hasKeyword = amountKeywords.any { keyword ->
-                    line.contains(keyword, ignoreCase = true)
+                    lowerCaseLine.contains(keyword.lowercase(Locale.ROOT))
                 }
-                val hasDateKeyword = dateKeywordRegex.containsMatchIn(line)
-                val hasNegativeKeyword = amountNegativeKeywords.any { keyword ->
-                    line.contains(keyword, ignoreCase = true)
+                val hasPenaltyKeyword = amountPenaltyKeywords.any { keyword ->
+                    lowerCaseLine.contains(keyword.lowercase(Locale.ROOT))
                 }
-                val likelyDateLine = dateRegex.containsMatchIn(line)
-                val dateSeparatorCount = line.count { char ->
-                    char == '-' || char == '/' || char == '.' || char == '年' || char == '月' || char == ':'
+                val hasDateKeyword = dateKeywords.any { keyword ->
+                    lowerCaseLine.contains(keyword.lowercase(Locale.ROOT))
                 }
+                val looksLikeDateLine = hasDateKeyword || dateRegex.containsMatchIn(line)
+                val isTimeOnlyLine = timeOnlyRegex.matches(line)
                 val digitCount = line.count(Char::isDigit)
-                val looksLikeDateLine = likelyDateLine ||
-                    hasDateKeyword ||
-                    (digitCount >= 6 && dateSeparatorCount >= 2)
+                val isStandaloneNumericLine = line.trim()
+                    .matches(Regex("""^[-+]?\d+(?:\.\d{1,2})?$"""))
+
+                if (isTimeOnlyLine && !hasKeyword) {
+                    return@forEachIndexed
+                }
+
                 amountRegex.findAll(line).forEach { match ->
-                    val normalizedText = match.value.replace(",", "")
+                    val rawAmount = match.value
+                    val normalizedText = rawAmount
+                        .removePrefix("+")
+                        .removePrefix("-")
+                        .replace(",", "")
+
                     val amountFen = AccountingFormatters.parseToFen(normalizedText) ?: return@forEach
-                    if (amountFen <= 0) {
+                    if (normalizedText.length == 4 && normalizedText.startsWith("20") && !normalizedText.contains('.')) {
                         return@forEach
                     }
-                    if (looksLikeDateLine && !hasKeyword) {
+                    if (looksLikeDateLine && !hasKeyword && !rawAmount.contains('.')) {
                         return@forEach
                     }
-                    if (normalizedText.length == 4 && normalizedText.startsWith("20") && hasDateKeyword) {
+                    if (digitCount >= 10 && !rawAmount.contains('.') && !hasKeyword) {
                         return@forEach
                     }
 
-                    var score = amountFen.coerceAtMost(999_999L).toInt()
-                    if (hasKeyword) score += 30_000
-                    if (normalizedText.contains('.')) score += 10_000
-                    if (!hasNegativeKeyword) score += 5_000
-                    if (index >= lines.lastIndex - 3) score += 1_500
-                    if (line.endsWith(match.value)) score += 1_000
-                    if (lowerCaseLine.contains("total")) score += 3_000
-                    if (hasNegativeKeyword) score -= 20_000
+                    var score = 0
+                    if (hasKeyword) score += 120
+                    if (rawAmount.startsWith("-")) score += 60
+                    if (normalizedText.contains('.')) score += 80
+                    if (isStandaloneNumericLine) score += 60
+                    if (line.length <= 12) score += 30
+                    if (index in 0..8) score += 20
+                    if (!hasPenaltyKeyword) score += 15
+                    if (hasPenaltyKeyword) score -= 80
+                    if (hasDateKeyword && !hasKeyword) score -= 50
+                    if (line.contains(':') && !rawAmount.contains('.') && !hasKeyword) score -= 60
+                    score += amountFen.coerceAtMost(999_999L).toInt() / 200
 
                     add(
                         AmountCandidate(
                             normalizedText = normalizedText,
                             amountFen = amountFen,
+                            lineIndex = index,
                             score = score,
                         ),
                     )
@@ -220,11 +249,14 @@ object OcrReceiptParser {
         val candidates = buildList {
             lines.forEachIndexed { index, line ->
                 dateRegex.findAll(line).forEach { match ->
-                    val value = match.value.trim()
+                    val value = normalizeDateText(match.value)
                     val millis = parseDateToMillis(value) ?: return@forEach
                     var score = 100 - index
-                    if (dateKeywordRegex.containsMatchIn(line)) {
-                        score += 50
+                    if (dateKeywords.any { keyword ->
+                            line.lowercase(Locale.ROOT).contains(keyword.lowercase(Locale.ROOT))
+                        }
+                    ) {
+                        score += 30
                     }
                     if (value.contains(':')) {
                         score += 10
@@ -233,65 +265,76 @@ object OcrReceiptParser {
                 }
             }
         }
-        if (candidates.isNotEmpty()) {
-            return candidates.maxByOrNull(DateCandidate::score)?.let { it.rawText to it.millis }
-        }
 
-        val fullText = lines.joinToString(" ")
-        return dateRegex.findAll(fullText)
-            .mapNotNull { match ->
-                val value = match.value.trim()
-                val millis = parseDateToMillis(value) ?: return@mapNotNull null
-                DateCandidate(value, millis, 0)
-            }
-            .maxByOrNull(DateCandidate::score)
-            ?.let { it.rawText to it.millis }
+        return candidates.maxByOrNull(DateCandidate::score)?.let { it.rawText to it.millis }
     }
 
-    private fun extractMerchant(lines: List<String>): String? {
+    private fun extractMerchant(lines: List<String>, amountLineIndex: Int?): String? {
         val candidates = buildList {
-            lines.take(8).forEachIndexed { index, line ->
-                val normalizedLine = line
-                    .replace(Regex("""^[*#\s]+|[*#\s]+$"""), "")
-                    .replace(Regex("""\s{2,}"""), " ")
-                if (normalizedLine.length !in 2..32) {
+            lines.forEachIndexed { index, rawLine ->
+                val line = rawLine
+                    .trimStart('`', '.', '\u00b7', '\u3002', '-', '_', ':')
+                    .trim()
+                val shouldInspect = index < 18 || amountLineIndex?.let { abs(index - it) <= 3 } == true
+                if (!shouldInspect) {
                     return@forEachIndexed
                 }
-                if (merchantStopWords.any { keyword -> normalizedLine.contains(keyword, ignoreCase = true) }) {
+                if (line.length !in 2..32) {
                     return@forEachIndexed
                 }
-                if (noisyMerchantRegex.containsMatchIn(normalizedLine)) {
+                if (merchantStopWords.any { stopWord ->
+                        line.contains(stopWord, ignoreCase = true)
+                    }
+                ) {
+                    return@forEachIndexed
+                }
+                if (decimalAmountRegex.containsMatchIn(line) || timeOnlyRegex.matches(line) || dateRegex.containsMatchIn(line)) {
                     return@forEachIndexed
                 }
 
-                val digitCount = normalizedLine.count(Char::isDigit)
-                val chineseOrLetterCount = normalizedLine.count { char ->
-                    char.isLetter() || char.code in 0x4E00..0x9FFF
+                val digitCount = line.count(Char::isDigit)
+                val letterOrChineseCount = line.count { character ->
+                    character.isLetter() || character.code in 0x4E00..0x9FFF
                 }
-                if (digitCount > 4 || chineseOrLetterCount < 2) {
+                if (digitCount > 6 || letterOrChineseCount < 2) {
                     return@forEachIndexed
                 }
 
-                var score = 100 - index * 10
-                if (merchantKeywords.any { keyword -> normalizedLine.contains(keyword, ignoreCase = true) }) {
-                    score += 80
-                }
-                if (normalizedLine.length in 4..18) {
-                    score += 20
+                var score = 100 - index * 6
+                if (merchantKeywords.any { keyword -> line.contains(keyword, ignoreCase = true) }) {
+                    score += 40
                 }
                 if (digitCount == 0) {
+                    score += 20
+                }
+                if (line.length in 2..10) {
+                    score += 20
+                }
+                if (amountLineIndex != null && index < amountLineIndex) {
                     score += 10
                 }
+                if (amountLineIndex != null && abs(index - amountLineIndex) <= 2) {
+                    score += 45
+                }
+                if (amountLineIndex != null && abs(index - amountLineIndex) == 1) {
+                    score += 30
+                }
 
-                add(MerchantCandidate(normalizedLine, score))
+                add(MerchantCandidate(line, score))
             }
         }
+
         return candidates.maxByOrNull(MerchantCandidate::score)?.name
     }
+
+    private fun normalizeDateText(rawDate: String): String = rawDate
+        .replace(Regex("""\s+"""), " ")
+        .trim()
 
     private data class AmountCandidate(
         val normalizedText: String,
         val amountFen: Long,
+        val lineIndex: Int,
         val score: Int,
     )
 

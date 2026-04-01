@@ -115,6 +115,7 @@ dependencies {
     kapt(libs.hilt.compiler)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.mpandroidchart)
+    implementation(libs.mlkit.text.recognition.chinese)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)

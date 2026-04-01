@@ -3,6 +3,7 @@ package com.example.ocrjizhang.data.repository
 import android.content.Context
 import com.example.ocrjizhang.data.local.dao.OcrRecordDao
 import com.example.ocrjizhang.data.local.entity.OcrRecordEntity
+import com.example.ocrjizhang.data.ocr.MlKitOcrEngine
 import com.example.ocrjizhang.data.ocr.PaddleOcrNative
 import com.example.ocrjizhang.utils.LocalIdGenerator
 import com.example.ocrjizhang.utils.OcrReceiptParser
@@ -40,6 +41,7 @@ class OcrRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val ocrRecordDao: OcrRecordDao,
     private val sessionManager: SessionManager,
+    private val mlKitOcrEngine: MlKitOcrEngine,
     private val paddleOcrNative: PaddleOcrNative,
 ) {
 
@@ -63,8 +65,7 @@ class OcrRepository @Inject constructor(
     suspend fun getCurrentUserId(): Long? = sessionManager.sessionFlow.first().userId
 
     suspend fun recognizeImage(imagePath: String): OcrRecognitionResult = withContext(Dispatchers.IO) {
-        val runtimeDir = ensureRuntimeFiles()
-        val rawText = paddleOcrNative.recognize(imagePath, runtimeDir.absolutePath).trim()
+        val rawText = recognizeRawText(imagePath)
         val parsedData = OcrReceiptParser.parse(rawText)
         val result = OcrRecognitionResult(
             imagePath = imagePath,
@@ -76,6 +77,17 @@ class OcrRepository @Inject constructor(
             saveRecord(userId, result)
         }
         result
+    }
+
+    private suspend fun recognizeRawText(imagePath: String): String {
+        val mlKitText = runCatching { mlKitOcrEngine.recognize(imagePath).trim() }
+            .getOrDefault("")
+        if (mlKitText.isNotBlank()) {
+            return mlKitText
+        }
+
+        val runtimeDir = ensureRuntimeFiles()
+        return paddleOcrNative.recognize(imagePath, runtimeDir.absolutePath).trim()
     }
 
     private suspend fun saveRecord(userId: Long, result: OcrRecognitionResult) {
