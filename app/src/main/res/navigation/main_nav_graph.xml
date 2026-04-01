@@ -64,6 +64,9 @@
         android:id="@+id/transactionEditorFragment"
         android:name="com.example.ocrjizhang.ui.transaction.TransactionEditorFragment"
         android:label="@string/page_transaction_editor">
+        <action
+            android:id="@+id/action_transactionEditorFragment_to_categoryFragment"
+            app:destination="@id/categoryFragment" />
         <argument
             android:name="prefillAmount"
             app:argType="string"

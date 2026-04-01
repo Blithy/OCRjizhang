@@ -118,6 +118,9 @@
     <string name="label_amount">金额</string>
     <string name="hint_amount">请输入金额，例如 32.50</string>
     <string name="hint_transaction_category">请选择分类</string>
+    <string name="transaction_category_helper">没有合适分类时，可以先去分类管理新增，返回后这里会自动刷新。</string>
+    <string name="transaction_category_helper_empty">当前还没有可用分类，先去分类管理创建一个，返回后就能继续记账。</string>
+    <string name="transaction_action_manage_categories">管理分类</string>
     <string name="label_transaction_date">记账日期</string>
     <string name="transaction_date_today">选择日期</string>
     <string name="label_transaction_merchant">商户</string>

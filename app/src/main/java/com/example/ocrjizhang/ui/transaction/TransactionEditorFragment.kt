@@ -12,6 +12,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.data.local.entity.RecordType
@@ -92,6 +93,11 @@ class TransactionEditorFragment : Fragment() {
         binding.secondaryButton.setOnClickListener {
             viewModel.clearForm()
         }
+        binding.manageCategoryButton.setOnClickListener {
+            findNavController().navigate(
+                TransactionEditorFragmentDirections.actionTransactionEditorFragmentToCategoryFragment(),
+            )
+        }
 
         viewModel.applyPrefill(
             amount = args.prefillAmount,
@@ -127,6 +133,11 @@ class TransactionEditorFragment : Fragment() {
         binding.ocrPrefillCard.isVisible = state.showOcrPrefillHint
         binding.ocrPrefillTitle.text = state.ocrPrefillTitle
         binding.ocrPrefillBody.text = state.ocrPrefillBody
+        binding.categoryHelperText.text = if (state.categories.isEmpty()) {
+            getString(R.string.transaction_category_helper_empty)
+        } else {
+            getString(R.string.transaction_category_helper)
+        }
 
         binding.typeToggleGroup.check(
             if (state.selectedType == RecordType.EXPENSE) {
