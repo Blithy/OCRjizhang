@@ -80,6 +80,10 @@
             android:name="prefillDateMillis"
             app:argType="long"
             android:defaultValue="-1L" />
+        <argument
+            android:name="editTransactionId"
+            app:argType="long"
+            android:defaultValue="-1L" />
     </fragment>
 
     <fragment

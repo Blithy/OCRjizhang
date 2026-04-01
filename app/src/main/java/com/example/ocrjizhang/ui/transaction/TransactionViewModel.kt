@@ -43,6 +43,7 @@ class TransactionViewModel @Inject constructor(
     private val merchantInput = MutableStateFlow("")
     private val remarkInput = MutableStateFlow("")
     private val editingTransactionId = MutableStateFlow<Long?>(null)
+    private val pendingEditRequestId = MutableStateFlow<Long?>(null)
     private val fromOcrPrefill = MutableStateFlow(false)
     private var prefillApplied = false
 
@@ -162,6 +163,17 @@ class TransactionViewModel @Inject constructor(
                     currentUserId.value = userId
                 }
         }
+
+        viewModelScope.launch {
+            combine(pendingEditRequestId, transactionsState) { requestedId, transactions ->
+                requestedId?.let { id -> transactions.firstOrNull { it.id == id } }
+            }.collect { transaction ->
+                if (transaction != null) {
+                    populateEditor(transaction)
+                    pendingEditRequestId.value = null
+                }
+            }
+        }
     }
 
     fun onTypeSelected(type: RecordType) {
@@ -224,6 +236,10 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
+    fun requestEdit(transactionId: Long?) {
+        pendingEditRequestId.value = transactionId
+    }
+
     fun submit() {
         val userId = currentUserId.value
         if (userId == null) {
@@ -284,15 +300,7 @@ class TransactionViewModel @Inject constructor(
     }
 
     fun startEditing(transactionId: Long) {
-        val transaction = transactionsState.value.firstOrNull { it.id == transactionId } ?: return
-        editingTransactionId.value = transaction.id
-        fromOcrPrefill.value = false
-        selectedType.value = transaction.type
-        selectedCategoryId.value = transaction.categoryId
-        amountInput.value = AccountingFormatters.formatFenForInput(transaction.amountFen)
-        dateMillis.value = transaction.transactionTime
-        merchantInput.value = transaction.merchantName.orEmpty()
-        remarkInput.value = transaction.remark.orEmpty()
+        pendingEditRequestId.value = transactionId
     }
 
     fun clearForm() {
@@ -328,6 +336,17 @@ class TransactionViewModel @Inject constructor(
     private fun observeTransactions(userId: Long?): Flow<List<TransactionEntity>> {
         if (userId == null) return flowOf(emptyList())
         return transactionRepository.observeTransactions(userId)
+    }
+
+    private fun populateEditor(transaction: TransactionEntity) {
+        editingTransactionId.value = transaction.id
+        fromOcrPrefill.value = false
+        selectedType.value = transaction.type
+        selectedCategoryId.value = transaction.categoryId
+        amountInput.value = AccountingFormatters.formatFenForInput(transaction.amountFen)
+        dateMillis.value = transaction.transactionTime
+        merchantInput.value = transaction.merchantName.orEmpty()
+        remarkInput.value = transaction.remark.orEmpty()
     }
 
     private fun toListItem(entity: TransactionEntity): TransactionListItem {

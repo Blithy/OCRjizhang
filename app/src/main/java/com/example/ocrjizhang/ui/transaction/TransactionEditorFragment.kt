@@ -35,6 +35,12 @@ class TransactionEditorFragment : Fragment() {
     private val transactionAdapter by lazy {
         TransactionAdapter(
             showActions = true,
+            onOpen = { item ->
+                viewModel.startEditing(item.id)
+                binding.scrollView.post {
+                    binding.scrollView.smoothScrollTo(0, 0)
+                }
+            },
             onEdit = { item ->
                 viewModel.startEditing(item.id)
                 binding.scrollView.post {
@@ -93,6 +99,7 @@ class TransactionEditorFragment : Fragment() {
             remark = args.prefillRemark,
             dateMillis = args.prefillDateMillis.takeIf { it > 0L },
         )
+        viewModel.requestEdit(args.editTransactionId.takeIf { it > 0L })
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

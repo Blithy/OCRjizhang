@@ -1,6 +1,7 @@
 package com.example.ocrjizhang.ui.transaction
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -13,6 +14,7 @@ import com.example.ocrjizhang.databinding.ItemTransactionBinding
 
 class TransactionAdapter(
     private val showActions: Boolean,
+    private val onOpen: ((TransactionListItem) -> Unit)? = null,
     private val onEdit: (TransactionListItem) -> Unit,
     private val onDelete: (TransactionListItem) -> Unit,
 ) : ListAdapter<TransactionListItem, TransactionAdapter.TransactionViewHolder>(DiffCallback) {
@@ -23,7 +25,7 @@ class TransactionAdapter(
             parent,
             false,
         )
-        return TransactionViewHolder(binding, showActions, onEdit, onDelete)
+        return TransactionViewHolder(binding, showActions, onOpen, onEdit, onDelete)
     }
 
     override fun onBindViewHolder(holder: TransactionViewHolder, position: Int) {
@@ -33,6 +35,7 @@ class TransactionAdapter(
     class TransactionViewHolder(
         private val binding: ItemTransactionBinding,
         private val showActions: Boolean,
+        private val onOpen: ((TransactionListItem) -> Unit)?,
         private val onEdit: (TransactionListItem) -> Unit,
         private val onDelete: (TransactionListItem) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
@@ -44,6 +47,7 @@ class TransactionAdapter(
             binding.amountView.text = item.amountLabel
             binding.editButton.isVisible = showActions
             binding.deleteButton.isVisible = showActions
+            binding.actionContainer.visibility = if (showActions) View.VISIBLE else View.GONE
 
             val colorRes = if (item.type == RecordType.INCOME) {
                 R.color.positive
@@ -53,6 +57,12 @@ class TransactionAdapter(
             binding.amountView.setTextColor(
                 ContextCompat.getColor(binding.root.context, colorRes),
             )
+
+            binding.root.isClickable = onOpen != null
+            binding.root.isFocusable = onOpen != null
+            binding.root.setOnClickListener {
+                onOpen?.invoke(item)
+            }
 
             binding.editButton.setOnClickListener { onEdit(item) }
             binding.deleteButton.setOnClickListener { onDelete(item) }
