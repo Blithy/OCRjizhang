@@ -138,6 +138,7 @@
     <string name="ocr_pick_hint">先从相册选择一张票据图片</string>
     <string name="ocr_action_capture">直接拍照</string>
     <string name="ocr_action_pick">选择图片</string>
+    <string name="ocr_action_clear">清除当前图片</string>
     <string name="ocr_action_recognize">开始识别</string>
     <string name="ocr_message_camera_cancelled">本次拍照已取消</string>
     <string name="ocr_message_camera_open_failed">无法打开系统相机</string>

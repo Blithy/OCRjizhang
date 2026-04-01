@@ -62,14 +62,15 @@ class OcrViewModel @Inject constructor(
         historyState,
     ) { processing, preparingImage, imagePath, result, history ->
         val navigationPayload = result?.toNavigationPayload()
+        val selectedFileName = imagePath
+            ?.substringAfterLast('\\')
+            ?.substringAfterLast('/')
+
         OcrUiState(
             isProcessing = processing,
             isImagePreparing = preparingImage,
             selectedImagePath = imagePath,
-            selectedImageHint = imagePath?.substringAfterLast('\\')
-                ?.substringAfterLast('/')
-                ?.let { "已选择图片：$it" }
-                ?: "先从相册选择一张票据图片",
+            selectedImageHint = selectedFileName?.let { "已选择图片：$it" } ?: "先从相册选择一张票据图片",
             parsedAmount = result?.parsedData?.amountText ?: "未识别",
             parsedDate = result?.parsedData?.dateText ?: "未识别",
             parsedMerchant = result?.parsedData?.merchantName ?: "未识别",
@@ -77,6 +78,7 @@ class OcrViewModel @Inject constructor(
             history = history.map(::toHistoryUiModel),
             canRecognize = imagePath != null && !processing && !preparingImage,
             canFillTransaction = navigationPayload != null && navigationPayload.hasAnyValue(),
+            canClearSelection = imagePath != null && !processing && !preparingImage,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -119,13 +121,18 @@ class OcrViewModel @Inject constructor(
             }.onSuccess { result ->
                 currentResult.value = result
                 if (result.rawText.isBlank()) {
-                    emitMessage("未识别到清晰文字，请换一张更清楚的票据")
+                    emitMessage("未识别到清晰文字，请换一张更清晰的票据")
                 }
             }.onFailure { throwable ->
                 emitMessage(throwable.message ?: "OCR 识别失败，请稍后重试")
             }
             isProcessing.value = false
         }
+    }
+
+    fun clearSelectedImage() {
+        selectedImagePath.value = null
+        currentResult.value = null
     }
 
     fun fillCurrentResult() {
@@ -162,6 +169,7 @@ class OcrViewModel @Inject constructor(
                 )
             }
         }.joinToString(" · ")
+
         return OcrHistoryUiModel(
             id = record.id,
             title = title,

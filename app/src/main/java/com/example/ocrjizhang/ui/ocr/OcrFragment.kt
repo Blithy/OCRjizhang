@@ -96,6 +96,9 @@ class OcrFragment : Fragment() {
         binding.fillTransactionButton.setOnClickListener {
             viewModel.fillCurrentResult()
         }
+        binding.clearImageButton.setOnClickListener {
+            viewModel.clearSelectedImage()
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -106,6 +109,7 @@ class OcrFragment : Fragment() {
                             is OcrEvent.Message -> {
                                 Snackbar.make(binding.root, event.message, Snackbar.LENGTH_SHORT).show()
                             }
+
                             is OcrEvent.NavigateToTransactionEditor -> {
                                 findNavController().navigate(
                                     OcrFragmentDirections.actionOcrFragmentToTransactionEditorFragment(
@@ -128,8 +132,9 @@ class OcrFragment : Fragment() {
         binding.progressIndicator.isVisible = state.isProcessing || state.isImagePreparing
         binding.recognizeButton.isEnabled = state.canRecognize
         binding.fillTransactionButton.isEnabled = state.canFillTransaction
+        binding.clearImageButton.isEnabled = state.canClearSelection
         binding.resultCard.isVisible = state.rawText.isNotBlank()
-        binding.previewCard.isVisible = state.selectedImagePath != null
+        binding.previewCard.isVisible = state.canClearSelection
         binding.historyList.isVisible = state.history.isNotEmpty()
         binding.historyEmptyGroup.isVisible = state.history.isEmpty()
         binding.historyEmptyTitle.text = state.historyEmptyTitle
@@ -138,7 +143,7 @@ class OcrFragment : Fragment() {
         binding.amountValue.text = state.parsedAmount
         binding.dateValue.text = state.parsedDate
         binding.merchantValue.text = state.parsedMerchant
-        binding.rawTextValue.text = state.rawText.ifBlank { "识别结果会展示在这里" }
+        binding.rawTextValue.text = state.rawText.ifBlank { "识别结果会显示在这里" }
 
         if (state.selectedImagePath != null) {
             val bitmap = BitmapFactory.decodeFile(state.selectedImagePath)

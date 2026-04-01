@@ -19,16 +19,17 @@ data class OcrUiState(
     val isProcessing: Boolean = false,
     val isImagePreparing: Boolean = false,
     val selectedImagePath: String? = null,
-    val selectedImageHint: String = "先从相册选择一张票据图片",
+    val selectedImageHint: String = "",
     val parsedAmount: String = "未识别",
     val parsedDate: String = "未识别",
     val parsedMerchant: String = "未识别",
     val rawText: String = "",
     val history: List<OcrHistoryUiModel> = emptyList(),
     val historyEmptyTitle: String = "还没有 OCR 识别记录",
-    val historyEmptyBody: String = "识别成功后，最近记录会保留在这里，方便你重复带入记账。",
+    val historyEmptyBody: String = "识别成功后，最近记录会保留在这里，方便重复带入记账。",
     val canRecognize: Boolean = false,
     val canFillTransaction: Boolean = false,
+    val canClearSelection: Boolean = false,
 )
 
 sealed interface OcrEvent {
