@@ -117,6 +117,9 @@ class TransactionEditorFragment : Fragment() {
         binding.saveButton.text = state.submitLabel
         binding.secondaryButton.text = state.secondaryLabel
         binding.dateButton.text = state.dateLabel
+        binding.ocrPrefillCard.isVisible = state.showOcrPrefillHint
+        binding.ocrPrefillTitle.text = state.ocrPrefillTitle
+        binding.ocrPrefillBody.text = state.ocrPrefillBody
 
         binding.typeToggleGroup.check(
             if (state.selectedType == RecordType.EXPENSE) {

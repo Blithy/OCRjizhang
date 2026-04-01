@@ -43,6 +43,7 @@ class TransactionViewModel @Inject constructor(
     private val merchantInput = MutableStateFlow("")
     private val remarkInput = MutableStateFlow("")
     private val editingTransactionId = MutableStateFlow<Long?>(null)
+    private val fromOcrPrefill = MutableStateFlow(false)
     private var prefillApplied = false
 
     private val _eventFlow = MutableSharedFlow<TransactionEvent>()
@@ -79,6 +80,7 @@ class TransactionViewModel @Inject constructor(
         merchantInput,
         remarkInput,
         editingTransactionId,
+        fromOcrPrefill,
         categoriesState,
         transactionsState,
     ) { values: Array<Any?> ->
@@ -90,10 +92,11 @@ class TransactionViewModel @Inject constructor(
         val merchant = values[5] as String
         val remark = values[6] as String
         val editingId = values[7] as Long?
+        val showOcrPrefill = values[8] as Boolean
         @Suppress("UNCHECKED_CAST")
-        val categories = values[8] as List<CategoryEntity>
+        val categories = values[9] as List<CategoryEntity>
         @Suppress("UNCHECKED_CAST")
-        val transactions = values[9] as List<TransactionEntity>
+        val transactions = values[10] as List<TransactionEntity>
 
         val effectiveCategoryId = categories
             .firstOrNull { it.id == manualCategoryId }
@@ -111,14 +114,37 @@ class TransactionViewModel @Inject constructor(
             merchantInput = merchant,
             remarkInput = remark,
             isEditing = editingId != null,
-            submitLabel = if (editingId == null) "保存这笔记账" else "更新这笔记账",
-            secondaryLabel = if (editingId == null) "清空表单" else "取消编辑",
-            transactions = transactions.map(::toListItem),
-            emptyTitle = if (userId == null) "请先登录后再记账" else "还没有交易记录",
-            emptyBody = if (userId == null) {
-                "当前没有可用会话，重新登录后就能继续记账。"
+            submitLabel = if (editingId == null) {
+                "\u4fdd\u5b58\u8fd9\u7b14\u8bb0\u8d26"
             } else {
-                "先保存一笔收入或支出，这里就会开始出现真实记录。"
+                "\u66f4\u65b0\u8fd9\u7b14\u8bb0\u8d26"
+            },
+            secondaryLabel = if (editingId == null) {
+                "\u6e05\u7a7a\u8868\u5355"
+            } else {
+                "\u53d6\u6d88\u7f16\u8f91"
+            },
+            showOcrPrefillHint = showOcrPrefill,
+            ocrPrefillTitle = if (showOcrPrefill) {
+                "\u5df2\u5e26\u5165 OCR \u8bc6\u522b\u7ed3\u679c"
+            } else {
+                ""
+            },
+            ocrPrefillBody = if (showOcrPrefill) {
+                "\u8fd9\u7b14\u652f\u51fa\u5df2\u9884\u586b\u91d1\u989d\u3001\u5546\u6237\u548c\u65e5\u671f\uff0c\u518d\u68c0\u67e5\u5206\u7c7b\u6216\u8865\u5145\u5907\u6ce8\u540e\u5c31\u53ef\u4ee5\u76f4\u63a5\u4fdd\u5b58\u3002"
+            } else {
+                ""
+            },
+            transactions = transactions.map(::toListItem),
+            emptyTitle = if (userId == null) {
+                "\u8bf7\u5148\u767b\u5f55\u540e\u518d\u8bb0\u8d26"
+            } else {
+                "\u8fd8\u6ca1\u6709\u4ea4\u6613\u8bb0\u5f55"
+            },
+            emptyBody = if (userId == null) {
+                "\u5f53\u524d\u6ca1\u6709\u53ef\u7528\u4f1a\u8bdd\uff0c\u91cd\u65b0\u767b\u5f55\u540e\u5c31\u80fd\u7ee7\u7eed\u8bb0\u8d26\u3002"
+            } else {
+                "\u5148\u4fdd\u5b58\u4e00\u7b14\u6536\u5165\u6216\u652f\u51fa\uff0c\u8fd9\u91cc\u5c31\u4f1a\u5f00\u59cb\u51fa\u73b0\u771f\u5b9e\u8bb0\u5f55\u3002"
             },
         )
     }.stateIn(
@@ -193,26 +219,27 @@ class TransactionViewModel @Inject constructor(
         }
         if (hasAnyPrefill) {
             selectedType.value = RecordType.EXPENSE
-            emitMessage("已带入 OCR 识别结果，可手动调整后再保存")
+            fromOcrPrefill.value = true
+            emitMessage("\u5df2\u5e26\u5165 OCR \u8bc6\u522b\u7ed3\u679c\uff0c\u53ef\u624b\u52a8\u8c03\u6574\u540e\u518d\u4fdd\u5b58")
         }
     }
 
     fun submit() {
         val userId = currentUserId.value
         if (userId == null) {
-            emitMessage("登录状态已失效，请重新登录")
+            emitMessage("\u767b\u5f55\u72b6\u6001\u5df2\u5931\u6548\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55")
             return
         }
 
         val amountFen = AccountingFormatters.parseToFen(amountInput.value)
         if (amountFen == null) {
-            emitMessage("请输入正确的金额，最多保留两位小数")
+            emitMessage("\u8bf7\u8f93\u5165\u6b63\u786e\u7684\u91d1\u989d\uff0c\u6700\u591a\u4fdd\u7559\u4e24\u4f4d\u5c0f\u6570")
             return
         }
 
         val categoryId = uiState.value.selectedCategoryId
         if (categoryId == null) {
-            emitMessage("请先选择分类")
+            emitMessage("\u8bf7\u5148\u9009\u62e9\u5206\u7c7b")
             return
         }
 
@@ -242,10 +269,16 @@ class TransactionViewModel @Inject constructor(
                     )
                 }
             }.onSuccess {
-                emitMessage(if (editingTransactionId.value == null) "交易已保存" else "交易已更新")
+                emitMessage(
+                    if (editingTransactionId.value == null) {
+                        "\u4ea4\u6613\u5df2\u4fdd\u5b58"
+                    } else {
+                        "\u4ea4\u6613\u5df2\u66f4\u65b0"
+                    },
+                )
                 clearForm()
             }.onFailure { throwable ->
-                emitMessage(throwable.message ?: "保存失败，请稍后重试")
+                emitMessage(throwable.message ?: "\u4fdd\u5b58\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5")
             }
         }
     }
@@ -253,6 +286,7 @@ class TransactionViewModel @Inject constructor(
     fun startEditing(transactionId: Long) {
         val transaction = transactionsState.value.firstOrNull { it.id == transactionId } ?: return
         editingTransactionId.value = transaction.id
+        fromOcrPrefill.value = false
         selectedType.value = transaction.type
         selectedCategoryId.value = transaction.categoryId
         amountInput.value = AccountingFormatters.formatFenForInput(transaction.amountFen)
@@ -263,6 +297,7 @@ class TransactionViewModel @Inject constructor(
 
     fun clearForm() {
         editingTransactionId.value = null
+        fromOcrPrefill.value = false
         amountInput.value = ""
         dateMillis.value = System.currentTimeMillis()
         merchantInput.value = ""
@@ -273,7 +308,7 @@ class TransactionViewModel @Inject constructor(
     fun deleteTransaction(transactionId: Long) {
         val userId = currentUserId.value
         if (userId == null) {
-            emitMessage("登录状态已失效，请重新登录")
+            emitMessage("\u767b\u5f55\u72b6\u6001\u5df2\u5931\u6548\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55")
             return
         }
         viewModelScope.launch {
@@ -283,9 +318,9 @@ class TransactionViewModel @Inject constructor(
                 if (editingTransactionId.value == transactionId) {
                     clearForm()
                 }
-                emitMessage("交易已删除")
+                emitMessage("\u4ea4\u6613\u5df2\u5220\u9664")
             }.onFailure { throwable ->
-                emitMessage(throwable.message ?: "删除失败，请稍后重试")
+                emitMessage(throwable.message ?: "\u5220\u9664\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5")
             }
         }
     }
@@ -303,7 +338,9 @@ class TransactionViewModel @Inject constructor(
         return TransactionListItem(
             id = entity.id,
             title = entity.categoryName,
-            subtitle = subtitleParts.joinToString(" · ").ifBlank { "无备注信息" },
+            subtitle = subtitleParts.joinToString(" \u00b7 ").ifBlank {
+                "\u65e0\u5907\u6ce8\u4fe1\u606f"
+            },
             meta = AccountingFormatters.formatDateTime(entity.transactionTime),
             amountLabel = AccountingFormatters.formatFen(entity.amountFen),
             type = entity.type,
