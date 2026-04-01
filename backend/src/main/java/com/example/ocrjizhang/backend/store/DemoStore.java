@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 public class DemoStore {
 
     private static final long DEMO_USER_ID = 9_001_001L;
+    private static final String LEGACY_DEMO_TOKEN = "local-demo-token";
 
     private final Map<Long, UserRecord> usersById = new ConcurrentHashMap<>();
     private final Map<String, Long> userIdsByUsername = new ConcurrentHashMap<>();
@@ -45,6 +46,7 @@ public class DemoStore {
         );
         usersById.put(demoUser.id(), demoUser);
         userIdsByUsername.put(normalizeUsername(demoUser.username()), demoUser.id());
+        userIdsByToken.put(LEGACY_DEMO_TOKEN, demoUser.id());
     }
 
     public synchronized AuthPayloadDto register(RegisterRequest request) {
