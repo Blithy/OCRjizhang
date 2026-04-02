@@ -45,6 +45,10 @@ class LoginViewModel @Inject constructor(
                 password = it.password.copy(value = DemoAccount.PASSWORD, error = null),
             )
         }
+        loginWith(
+            username = DemoAccount.USERNAME,
+            password = DemoAccount.PASSWORD,
+        )
     }
 
     fun login() {
@@ -69,11 +73,18 @@ class LoginViewModel @Inject constructor(
             return
         }
 
+        loginWith(
+            username = currentState.username.value,
+            password = currentState.password.value,
+        )
+    }
+
+    private fun loginWith(username: String, password: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val result = authRepository.login(
-                username = currentState.username.value,
-                password = currentState.password.value,
+                username = username,
+                password = password,
             )
             _uiState.update { it.copy(isLoading = false) }
             result.fold(
