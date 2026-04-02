@@ -69,6 +69,7 @@
     <string name="assets_summary_status_placeholder">等待账户数据</string>
     <string name="assets_accounts_title">资金账户</string>
     <string name="assets_accounts_subtitle">默认会准备现金、微信、支付宝、银行卡，你也可以继续添加自己的钱包或账户。</string>
+    <string name="assets_default_accounts_hint">默认账户：现金 / 微信 / 支付宝 / 银行卡</string>
     <string name="assets_accounts_placeholder_title">还没有资金账户</string>
     <string name="assets_accounts_placeholder_body">先新增一个账户，或者保留默认账户后直接修改余额，就能开始展示真实资产。</string>
     <string name="assets_action_add_account">新增账户</string>
@@ -82,7 +83,7 @@
     <string name="hint_account_balance">请输入当前余额</string>
     <string name="error_account_name_required">请输入账户名称</string>
     <string name="error_account_balance_required">请输入账户余额</string>
-    <string name="asset_badge_default">预设</string>
+    <string name="asset_badge_default">默认</string>
     <string name="asset_badge_custom">自建</string>
     <string name="placeholder_title">模块占位页</string>
     <string name="transaction_placeholder_body">交易录入页骨架已经创建，后续会接入表单、分类选择、金额校验与保存逻辑。</string>

@@ -70,6 +70,7 @@ class AssetFragment : Fragment() {
         binding.totalAssetValue.text = state.totalAssetLabel
         binding.accountCountValue.text = state.accountCountLabel
         binding.statusValue.text = state.statusLabel
+        binding.defaultAccountsHint.text = state.defaultAccountsLabel
         binding.progressBar.isVisible = state.isLoading
         binding.accountList.isVisible = state.accounts.isNotEmpty()
         binding.emptyStateGroup.isVisible = !state.isLoading && state.accounts.isEmpty()

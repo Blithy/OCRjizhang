@@ -43,6 +43,7 @@ class AssetAdapter(
             )
             binding.editButton.setOnClickListener { onEdit(item) }
             binding.deleteButton.setOnClickListener { onDelete(item) }
+            binding.root.setOnClickListener { onEdit(item) }
         }
     }
 

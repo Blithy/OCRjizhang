@@ -11,27 +11,27 @@ object AccountDefaults {
         "银行卡" to "卡",
     )
 
+    fun defaultAccountNames(): List<String> = defaultAccounts.map { it.first }
+
     fun buildMissingDefaults(
         userId: Long,
         existingAccounts: List<AccountEntity>,
     ): List<AccountEntity> {
-        val existingNames = existingAccounts.map { it.name.lowercase() }.toSet()
+        if (existingAccounts.isNotEmpty()) {
+            return emptyList()
+        }
         val now = System.currentTimeMillis()
         return defaultAccounts.mapNotNull { (name, symbol) ->
-            if (existingNames.contains(name.lowercase())) {
-                null
-            } else {
-                AccountEntity(
-                    id = LocalIdGenerator.nextId(),
-                    userId = userId,
-                    name = name,
-                    symbol = symbol,
-                    balanceFen = 0L,
-                    isDefault = true,
-                    createdAt = now,
-                    updatedAt = now,
-                )
-            }
+            AccountEntity(
+                id = LocalIdGenerator.nextId(),
+                userId = userId,
+                name = name,
+                symbol = symbol,
+                balanceFen = 0L,
+                isDefault = true,
+                createdAt = now,
+                updatedAt = now,
+            )
         }
     }
 

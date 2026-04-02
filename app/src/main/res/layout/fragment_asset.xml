@@ -195,6 +195,15 @@
                             android:text="@string/assets_accounts_subtitle"
                             android:textColor="@color/ink_secondary"
                             android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/defaultAccountsHint"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="@string/assets_default_accounts_hint"
+                            android:textColor="@color/ink_secondary"
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <com.google.android.material.button.MaterialButton

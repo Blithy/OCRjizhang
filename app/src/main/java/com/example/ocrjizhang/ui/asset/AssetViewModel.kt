@@ -3,6 +3,7 @@ package com.example.ocrjizhang.ui.asset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ocrjizhang.data.local.entity.AccountEntity
+import com.example.ocrjizhang.data.repository.AccountDefaults
 import com.example.ocrjizhang.data.repository.AccountRepository
 import com.example.ocrjizhang.data.repository.SessionManager
 import com.example.ocrjizhang.utils.AccountingFormatters
@@ -56,6 +57,7 @@ class AssetViewModel @Inject constructor(
                 totalAssetLabel = AccountingFormatters.formatFen(totalAssets),
                 accountCountLabel = "${accounts.size} 个账户",
                 statusLabel = if (accounts.isEmpty()) "等待添加账户" else "本地账户已就绪",
+                defaultAccountsLabel = "默认账户：${AccountDefaults.defaultAccountNames().joinToString(" / ")}",
                 accounts = accounts.map(::toAccountItem),
                 emptyTitle = if (userId == null) "当前没有可用会话" else "还没有资金账户",
                 emptyBody = if (userId == null) {
@@ -142,7 +144,7 @@ class AssetViewModel @Inject constructor(
             id = account.id,
             name = account.name,
             symbol = account.symbol,
-            detail = if (account.isDefault) "常用预设账户" else "自定义资金账户",
+            detail = if (account.isDefault) "默认账户 · 首次演示会自动准备" else "自定义资金账户",
             balanceLabel = AccountingFormatters.formatFen(account.balanceFen),
             isDefault = account.isDefault,
         )

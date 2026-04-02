@@ -14,6 +14,7 @@ data class AssetUiState(
     val totalAssetLabel: String = "￥0.00",
     val accountCountLabel: String = "0 个账户",
     val statusLabel: String = "等待账户数据",
+    val defaultAccountsLabel: String = "",
     val accounts: List<AssetAccountItem> = emptyList(),
     val emptyTitle: String = "",
     val emptyBody: String = "",
