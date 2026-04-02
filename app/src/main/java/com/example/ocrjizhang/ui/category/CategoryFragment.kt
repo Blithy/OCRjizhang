@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import androidx.activity.OnBackPressedCallback
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -12,10 +13,13 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.data.local.entity.RecordType
 import com.example.ocrjizhang.databinding.FragmentCategoryBinding
+import com.example.ocrjizhang.ui.transaction.TransactionEntryBottomSheet
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
@@ -34,6 +38,17 @@ class CategoryFragment : Fragment() {
             onDelete = ::showDeleteDialog,
         )
     }
+    private val shouldReturnToTransactionEntry: Boolean
+        get() = arguments?.getBoolean(ARG_RETURN_TO_TRANSACTION_ENTRY) == true
+    private val returnRecordType: RecordType
+        get() = runCatching {
+            RecordType.valueOf(arguments?.getString(ARG_RETURN_RECORD_TYPE).orEmpty())
+        }.getOrDefault(RecordType.EXPENSE)
+    private val returnBackCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            handleExit()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,6 +63,17 @@ class CategoryFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.categoryList.adapter = adapter
+        if (shouldReturnToTransactionEntry) {
+            returnBackCallback.isEnabled = true
+            requireActivity().onBackPressedDispatcher.addCallback(
+                viewLifecycleOwner,
+                returnBackCallback,
+            )
+            requireActivity().findViewById<MaterialToolbar>(R.id.topAppBar)
+                .setNavigationOnClickListener {
+                    handleExit()
+                }
+        }
         binding.expenseButton.setOnClickListener {
             viewModel.onTypeSelected(RecordType.EXPENSE)
         }
@@ -197,9 +223,34 @@ class CategoryFragment : Fragment() {
         }
     }
 
+    private fun handleExit() {
+        if (shouldReturnToTransactionEntry) {
+            findNavController().popBackStack()
+            requireActivity().window.decorView.post {
+                TransactionEntryBottomSheet.show(
+                    fragmentManager = parentFragmentManager,
+                    initialType = returnRecordType,
+                )
+            }
+        } else {
+            findNavController().navigateUp()
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        if (shouldReturnToTransactionEntry) {
+            requireActivity().findViewById<MaterialToolbar>(R.id.topAppBar)
+                .setNavigationOnClickListener {
+                    findNavController().navigateUp()
+                }
+        }
         binding.categoryList.adapter = null
         _binding = null
+    }
+
+    companion object {
+        const val ARG_RETURN_TO_TRANSACTION_ENTRY = "returnToTransactionEntry"
+        const val ARG_RETURN_RECORD_TYPE = "returnRecordType"
     }
 }

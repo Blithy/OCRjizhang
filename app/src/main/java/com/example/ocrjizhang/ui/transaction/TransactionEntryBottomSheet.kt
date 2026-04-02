@@ -94,7 +94,13 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
         binding.detailButton.setOnClickListener { showDetailDialog() }
         binding.accountCard.setOnClickListener { showAccountPicker() }
         binding.manageCategoryButton.setOnClickListener {
-            rootNavController().navigate(R.id.categoryFragment)
+            rootNavController().navigate(
+                R.id.categoryFragment,
+                bundleOf(
+                    "returnToTransactionEntry" to true,
+                    "returnRecordType" to latestState.selectedType.name,
+                ),
+            )
             dismiss()
         }
         binding.ocrAssistButton.setOnClickListener {
@@ -127,6 +133,13 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
             remark = requireArguments().getString(ARG_PREFILL_REMARK).orEmpty(),
             dateMillis = requireArguments().getLong(ARG_PREFILL_DATE_MILLIS).takeIf { it > 0L },
         )
+        requireArguments()
+            .getString(ARG_INITIAL_TYPE)
+            ?.takeIf { requireArguments().getLong(ARG_EDIT_TRANSACTION_ID) <= 0L }
+            ?.let { typeName ->
+                runCatching { RecordType.valueOf(typeName) }.getOrNull()
+            }
+            ?.let(viewModel::onTypeSelected)
         viewModel.requestEdit(
             requireArguments().getLong(ARG_EDIT_TRANSACTION_ID).takeIf { it > 0L },
         )
@@ -293,6 +306,7 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
         private const val ARG_PREFILL_MERCHANT = "prefill_merchant"
         private const val ARG_PREFILL_REMARK = "prefill_remark"
         private const val ARG_PREFILL_DATE_MILLIS = "prefill_date_millis"
+        private const val ARG_INITIAL_TYPE = "initial_type"
 
         fun show(
             fragmentManager: FragmentManager,
@@ -301,6 +315,7 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
             prefillMerchant: String = "",
             prefillRemark: String = "",
             prefillDateMillis: Long? = null,
+            initialType: RecordType? = null,
         ) {
             if (fragmentManager.isStateSaved) return
             if (fragmentManager.findFragmentByTag(TAG) != null) return
@@ -312,6 +327,7 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
                     ARG_PREFILL_MERCHANT to prefillMerchant,
                     ARG_PREFILL_REMARK to prefillRemark,
                     ARG_PREFILL_DATE_MILLIS to (prefillDateMillis ?: -1L),
+                    ARG_INITIAL_TYPE to initialType?.name.orEmpty(),
                 )
             }.show(fragmentManager, TAG)
         }

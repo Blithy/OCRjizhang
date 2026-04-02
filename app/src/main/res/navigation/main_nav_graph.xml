@@ -144,7 +144,16 @@
     <fragment
         android:id="@+id/categoryFragment"
         android:name="com.example.ocrjizhang.ui.category.CategoryFragment"
-        android:label="@string/page_category" />
+        android:label="@string/page_category">
+        <argument
+            android:name="returnToTransactionEntry"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <argument
+            android:name="returnRecordType"
+            app:argType="string"
+            android:defaultValue="EXPENSE" />
+    </fragment>
 
     <fragment
         android:id="@+id/ocrFragment"
