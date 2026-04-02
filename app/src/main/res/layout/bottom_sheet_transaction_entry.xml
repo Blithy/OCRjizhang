@@ -172,13 +172,18 @@
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             app:spanCount="5" />
 
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:id="@+id/inputPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/surface_base"
-            app:cardElevation="0dp"
-            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.OCRjizhang.PanelTopOnly">
+            android:background="@drawable/bg_transaction_input_panel"
+            android:orientation="vertical">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/outline_soft"
+                android:alpha="0.6" />
 
             <LinearLayout
                 android:id="@+id/inputPanelContent"
@@ -446,6 +451,6 @@
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
