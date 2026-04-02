@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
         R.id.splashFragment,
         R.id.loginFragment,
         R.id.registerFragment,
+        R.id.transactionEditorFragment,
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -19,7 +20,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.data.local.entity.RecordType
 import com.example.ocrjizhang.databinding.FragmentTransactionEditorBinding
-import com.example.ocrjizhang.ui.auth.doAfterTextChangedCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -33,6 +33,7 @@ class TransactionEditorFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: TransactionViewModel by viewModels()
     private val args: TransactionEditorFragmentArgs by navArgs()
+    private var latestState = TransactionUiState()
 
     private val categoryAdapter by lazy {
         QuickCategoryAdapter { option ->
@@ -52,15 +53,19 @@ class TransactionEditorFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.categoryGrid.layoutManager = GridLayoutManager(requireContext(), 4)
+        binding.categoryGrid.layoutManager = GridLayoutManager(requireContext(), 5)
         binding.categoryGrid.adapter = categoryAdapter
 
+        binding.cancelButton.setOnClickListener {
+            findNavController().popBackStack()
+        }
         binding.expenseButton.setOnClickListener { viewModel.onTypeSelected(RecordType.EXPENSE) }
         binding.incomeButton.setOnClickListener { viewModel.onTypeSelected(RecordType.INCOME) }
-        binding.merchantEdit.doAfterTextChangedCompat(viewModel::onMerchantChanged)
-        binding.remarkEdit.doAfterTextChangedCompat(viewModel::onRemarkChanged)
         binding.dateButton.setOnClickListener {
             showDatePicker(viewModel.uiState.value.dateMillis)
+        }
+        binding.detailButton.setOnClickListener {
+            showDetailDialog()
         }
         binding.manageCategoryButton.setOnClickListener {
             findNavController().navigate(
@@ -126,11 +131,7 @@ class TransactionEditorFragment : Fragment() {
     }
 
     private fun render(state: TransactionUiState) {
-        requireActivity().title = when {
-            state.isEditing -> getString(R.string.page_transaction_editor_edit)
-            state.showOcrPrefillHint -> getString(R.string.page_transaction_editor_prefill)
-            else -> getString(R.string.page_transaction_editor)
-        }
+        latestState = state
 
         binding.ocrPrefillCard.isVisible = state.showOcrPrefillHint
         binding.ocrPrefillTitle.text = state.ocrPrefillTitle
@@ -139,6 +140,7 @@ class TransactionEditorFragment : Fragment() {
         binding.saveButton.text = state.submitLabel
         binding.secondaryButton.text = state.secondaryLabel
         binding.dateButton.text = state.dateLabel
+        binding.detailButton.text = state.detailLabel
         binding.amountValue.text = state.amountDisplay
         binding.amountValue.setTextColor(
             ContextCompat.getColor(
@@ -150,11 +152,6 @@ class TransactionEditorFragment : Fragment() {
                 },
             ),
         )
-        binding.categoryHelperText.text = if (state.categories.isEmpty()) {
-            getString(R.string.transaction_category_helper_empty)
-        } else {
-            getString(R.string.transaction_category_helper)
-        }
         binding.typeToggleGroup.check(
             if (state.selectedType == RecordType.EXPENSE) {
                 R.id.expenseButton
@@ -162,15 +159,6 @@ class TransactionEditorFragment : Fragment() {
                 R.id.incomeButton
             },
         )
-
-        if (binding.merchantEdit.text?.toString() != state.merchantInput) {
-            binding.merchantEdit.setText(state.merchantInput)
-            binding.merchantEdit.setSelection(state.merchantInput.length)
-        }
-        if (binding.remarkEdit.text?.toString() != state.remarkInput) {
-            binding.remarkEdit.setText(state.remarkInput)
-            binding.remarkEdit.setSelection(state.remarkInput.length)
-        }
 
         categoryAdapter.submitList(state.categories)
     }
@@ -232,6 +220,27 @@ class TransactionEditorFragment : Fragment() {
             calendar.get(Calendar.MINUTE),
             true,
         ).show()
+    }
+
+    private fun showDetailDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_transaction_details, null)
+        val merchantEdit = dialogView.findViewById<EditText>(R.id.merchantEdit)
+        val remarkEdit = dialogView.findViewById<EditText>(R.id.remarkEdit)
+
+        merchantEdit.setText(latestState.merchantInput)
+        merchantEdit.setSelection(merchantEdit.text?.length ?: 0)
+        remarkEdit.setText(latestState.remarkInput)
+        remarkEdit.setSelection(remarkEdit.text?.length ?: 0)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.transaction_detail_dialog_title)
+            .setView(dialogView)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.action_save) { _, _ ->
+                viewModel.onMerchantChanged(merchantEdit.text?.toString().orEmpty())
+                viewModel.onRemarkChanged(remarkEdit.text?.toString().orEmpty())
+            }
+            .show()
     }
 
     override fun onDestroyView() {

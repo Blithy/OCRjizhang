@@ -29,6 +29,7 @@ data class TransactionUiState(
     val dateMillis: Long = System.currentTimeMillis(),
     val merchantInput: String = "",
     val remarkInput: String = "",
+    val detailLabel: String = "\u70b9\u51fb\u8865\u5145\u5907\u6ce8",
     val isEditing: Boolean = false,
     val submitLabel: String = "\u5b8c\u6210",
     val secondaryLabel: String = "\u4fdd\u5b58\u518d\u8bb0",

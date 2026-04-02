@@ -117,6 +117,7 @@ class TransactionViewModel @Inject constructor(
             dateMillis = selectedDate,
             merchantInput = merchant,
             remarkInput = remark,
+            detailLabel = buildDetailLabel(merchant, remark),
             isEditing = editingId != null,
             submitLabel = if (editingId == null) {
                 "完成"
@@ -407,6 +408,14 @@ class TransactionViewModel @Inject constructor(
             "¥0.00"
         } else {
             "¥$raw"
+        }
+
+    private fun buildDetailLabel(merchant: String, remark: String): String =
+        buildList {
+            merchant.takeIf { it.isNotBlank() }?.let(::add)
+            remark.takeIf { it.isNotBlank() }?.let(::add)
+        }.joinToString(" · ").ifBlank {
+            "点击填写备注"
         }
 
     private fun emitMessage(message: String) {
