@@ -11,9 +11,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.FragmentHomeBinding
 import com.example.ocrjizhang.ui.transaction.TransactionAdapter
+import com.example.ocrjizhang.ui.transaction.TransactionEntryBottomSheet
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -86,10 +86,9 @@ class HomeFragment : Fragment() {
     }
 
     private fun openTransactionEditor(transactionId: Long) {
-        findNavController().navigate(
-            HomeFragmentDirections.actionHomeFragmentToTransactionEditorFragment(
-                editTransactionId = transactionId,
-            ),
+        TransactionEntryBottomSheet.show(
+            fragmentManager = parentFragmentManager,
+            editTransactionId = transactionId,
         )
     }
 

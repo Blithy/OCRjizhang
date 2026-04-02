@@ -14,9 +14,9 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.FragmentOcrBinding
+import com.example.ocrjizhang.ui.transaction.TransactionEntryBottomSheet
 import com.example.ocrjizhang.utils.ImageFileUtils
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -111,13 +111,12 @@ class OcrFragment : Fragment() {
                             }
 
                             is OcrEvent.NavigateToTransactionEditor -> {
-                                findNavController().navigate(
-                                    OcrFragmentDirections.actionOcrFragmentToTransactionEditorFragment(
-                                        prefillAmount = event.payload.amount,
-                                        prefillMerchant = event.payload.merchant,
-                                        prefillRemark = event.payload.remark,
-                                        prefillDateMillis = event.payload.dateMillis ?: -1L,
-                                    ),
+                                TransactionEntryBottomSheet.show(
+                                    fragmentManager = parentFragmentManager,
+                                    prefillAmount = event.payload.amount,
+                                    prefillMerchant = event.payload.merchant,
+                                    prefillRemark = event.payload.remark,
+                                    prefillDateMillis = event.payload.dateMillis,
                                 )
                             }
                         }

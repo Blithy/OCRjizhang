@@ -11,6 +11,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import com.example.ocrjizhang.databinding.ActivityMainBinding
+import com.example.ocrjizhang.ui.transaction.TransactionEntryBottomSheet
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -54,9 +55,7 @@ class MainActivity : AppCompatActivity() {
         binding.topAppBar.setupWithNavController(navController, appBarConfiguration)
         binding.bottomNav.setupWithNavController(navController)
         binding.addRecordFab.setOnClickListener {
-            if (navController.currentDestination?.id != R.id.transactionEditorFragment) {
-                navController.navigate(R.id.action_global_transactionEditorFragment)
-            }
+            TransactionEntryBottomSheet.show(supportFragmentManager)
         }
 
         navController.addOnDestinationChangedListener { _, destination, _ ->

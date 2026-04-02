@@ -18,4 +18,17 @@
     <style name="Widget.OCRjizhang.BottomNav.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">@color/surface_tint_soft</item>
     </style>
+
+    <style name="ThemeOverlay.OCRjizhang.TransactionEntryBottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.OCRjizhang.TransactionEntryBottomSheet</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="enableEdgeToEdge">true</item>
+    </style>
+
+    <style name="Widget.OCRjizhang.TransactionEntryBottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.None</item>
+        <item name="android:elevation">0dp</item>
+    </style>
 </resources>
