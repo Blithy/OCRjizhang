@@ -14,7 +14,6 @@ import androidx.navigation.fragment.findNavController
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.FragmentHomeBinding
 import com.example.ocrjizhang.ui.transaction.TransactionAdapter
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -28,23 +27,14 @@ class HomeFragment : Fragment() {
     private val viewModel: HomeViewModel by viewModels()
     private val recentAdapter by lazy {
         TransactionAdapter(
-            showActions = true,
+            showActions = false,
             onOpen = { item ->
                 openTransactionEditor(item.id)
             },
             onEdit = { item ->
                 openTransactionEditor(item.id)
             },
-            onDelete = { item ->
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.transaction_delete_title)
-                    .setMessage(getString(R.string.transaction_delete_message, item.amountLabel))
-                    .setNegativeButton(R.string.action_cancel, null)
-                    .setPositiveButton(R.string.action_delete) { _, _ ->
-                        viewModel.deleteTransaction(item.id)
-                    }
-                    .show()
-            },
+            onDelete = { },
         )
     }
 
@@ -61,23 +51,22 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.recentTransactionList.adapter = recentAdapter
-        binding.addRecordCard.setOnClickListener {
-            findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToTransactionEditorFragment())
-        }
-        binding.ocrCard.setOnClickListener {
-            findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToOcrFragment())
-        }
-        binding.categoryCard.setOnClickListener {
-            findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToCategoryFragment())
-        }
+        binding.ocrCard.setOnClickListener(::openOcr)
+        binding.ocrStartButton.setOnClickListener(::openOcr)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
+                        binding.welcomeTitle.text = state.welcomeTitle
+                        binding.welcomeSubtitle.text = state.welcomeSubtitle
+                        binding.summaryPeriodLabel.text = state.summaryPeriodLabel
                         binding.incomeValue.text = state.incomeLabel
                         binding.expenseValue.text = state.expenseLabel
                         binding.surplusValue.text = state.surplusLabel
+                        binding.statusAccountValue.text = state.statusAccountValue
+                        binding.statusRecordsValue.text = state.statusRecordsValue
+                        binding.statusLatestValue.text = state.statusLatestValue
                         binding.recentTransactionList.isVisible = state.recentTransactions.isNotEmpty()
                         binding.recentEmptyGroup.isVisible = state.recentTransactions.isEmpty()
                         binding.recentEmptyTitle.text = state.recentEmptyTitle
@@ -102,6 +91,10 @@ class HomeFragment : Fragment() {
                 editTransactionId = transactionId,
             ),
         )
+    }
+
+    private fun openOcr(@Suppress("UNUSED_PARAMETER") view: View) {
+        findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToOcrFragment())
     }
 
     override fun onDestroyView() {

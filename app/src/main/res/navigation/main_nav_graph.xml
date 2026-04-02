@@ -20,6 +20,14 @@
         app:popEnterAnim="@anim/nav_fade_in"
         app:popExitAnim="@anim/nav_fade_out" />
 
+    <action
+        android:id="@+id/action_global_transactionEditorFragment"
+        app:destination="@id/transactionEditorFragment"
+        app:enterAnim="@anim/nav_enter_forward"
+        app:exitAnim="@anim/nav_exit_forward"
+        app:popEnterAnim="@anim/nav_enter_back"
+        app:popExitAnim="@anim/nav_exit_back" />
+
     <fragment
         android:id="@+id/splashFragment"
         android:name="com.example.ocrjizhang.ui.auth.SplashFragment"
@@ -77,6 +85,11 @@
             app:popEnterAnim="@anim/nav_enter_back"
             app:popExitAnim="@anim/nav_exit_back" />
     </fragment>
+
+    <fragment
+        android:id="@+id/assetFragment"
+        android:name="com.example.ocrjizhang.ui.asset.AssetFragment"
+        android:label="@string/page_assets" />
 
     <fragment
         android:id="@+id/statisticsFragment"

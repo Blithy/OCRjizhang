@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity() {
 
     private val topLevelDestinations = setOf(
         R.id.homeFragment,
+        R.id.assetFragment,
         R.id.statisticsFragment,
         R.id.profileFragment,
     )
@@ -50,10 +51,16 @@ class MainActivity : AppCompatActivity() {
 
         binding.topAppBar.setupWithNavController(navController, appBarConfiguration)
         binding.bottomNav.setupWithNavController(navController)
+        binding.addRecordFab.setOnClickListener {
+            if (navController.currentDestination?.id != R.id.transactionEditorFragment) {
+                navController.navigate(R.id.action_global_transactionEditorFragment)
+            }
+        }
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val showBottomNav = destination.id in topLevelDestinations
             val showToolbar = destination.id !in toolbarHiddenDestinations
+            val showFab = destination.id in topLevelDestinations
 
             updateChromeVisibility(
                 view = binding.bottomNav,
@@ -64,6 +71,11 @@ class MainActivity : AppCompatActivity() {
                 view = binding.topAppBar,
                 visible = showToolbar,
                 hiddenTranslationY = -resources.displayMetrics.density * 16f,
+            )
+            updateChromeVisibility(
+                view = binding.addRecordFab,
+                visible = showFab,
+                hiddenTranslationY = resources.displayMetrics.density * 32f,
             )
             binding.navHostFragment.updateLayoutParams<CoordinatorLayout.LayoutParams> {
                 bottomMargin = if (showBottomNav) {

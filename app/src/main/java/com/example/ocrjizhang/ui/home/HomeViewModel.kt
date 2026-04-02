@@ -9,6 +9,9 @@ import com.example.ocrjizhang.utils.AccountingFormatters
 import com.example.ocrjizhang.utils.TransactionSummaryCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,10 +26,20 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+private fun currentMonthLabel(): String =
+    LocalDate.now()
+        .format(DateTimeFormatter.ofPattern("yyyy年M月", Locale.CHINA))
+
 data class HomeUiState(
+    val welcomeTitle: String = "欢迎回来",
+    val welcomeSubtitle: String = "先看本月收支，再决定是手动记一笔，还是从票据截图快速带入。",
+    val summaryPeriodLabel: String = currentMonthLabel(),
     val incomeLabel: String = "收入 ¥0.00",
     val expenseLabel: String = "支出 ¥0.00",
     val surplusLabel: String = "结余 ¥0.00",
+    val statusAccountValue: String = "未登录",
+    val statusRecordsValue: String = "0 笔记录",
+    val statusLatestValue: String = "等待第一笔记账",
     val recentTransactions: List<TransactionListItem> = emptyList(),
     val recentEmptyTitle: String = "",
     val recentEmptyBody: String = "",
@@ -50,20 +63,37 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = sessionManager.sessionFlow
         .map { snapshot ->
             currentUserId.value = snapshot.userId
-            snapshot.userId
+            snapshot
         }
         .distinctUntilChanged()
-        .flatMapLatest { userId ->
+        .flatMapLatest { snapshot ->
+            val userId = snapshot.userId
             if (userId == null) {
                 flowOf(HomeUiState())
             } else {
                 transactionRepository.observeTransactions(userId).map { transactions ->
                     val monthlySummary = TransactionSummaryCalculator.calculateMonthlySummary(transactions)
+                    val displayName = snapshot.nickname.ifBlank {
+                        snapshot.username.ifBlank { "记账用户" }
+                    }
+                    val latestRecord = transactions.firstOrNull()
                     HomeUiState(
+                        welcomeTitle = "${displayName}，先看一下这个月",
+                        welcomeSubtitle = if (transactions.isEmpty()) {
+                            "账本首页已经整理好，点击右下角就可以开始记第一笔。"
+                        } else {
+                            "最近的收支摘要和票据识别入口都已经放到首页，适合直接演示。"
+                        },
+                        summaryPeriodLabel = currentMonthLabel(),
                         incomeLabel = "收入 ${AccountingFormatters.formatFen(monthlySummary.incomeFen)}",
                         expenseLabel = "支出 ${AccountingFormatters.formatFen(monthlySummary.expenseFen)}",
                         surplusLabel = "结余 ${AccountingFormatters.formatFen(monthlySummary.surplusFen)}",
-                        recentTransactions = transactions.take(4).map { transaction ->
+                        statusAccountValue = snapshot.username.ifBlank { "演示账号" },
+                        statusRecordsValue = "本地 ${transactions.size} 笔",
+                        statusLatestValue = latestRecord?.let {
+                            AccountingFormatters.formatDateTime(it.transactionTime)
+                        } ?: "等待第一笔记账",
+                        recentTransactions = transactions.take(5).map { transaction ->
                             TransactionListItem(
                                 id = transaction.id,
                                 title = transaction.categoryName,
