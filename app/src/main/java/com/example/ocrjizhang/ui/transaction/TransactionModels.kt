@@ -5,6 +5,8 @@ import com.example.ocrjizhang.data.local.entity.RecordType
 data class CategoryOption(
     val id: Long,
     val name: String,
+    val symbol: String,
+    val isSelected: Boolean,
 )
 
 data class TransactionListItem(
@@ -22,21 +24,21 @@ data class TransactionUiState(
     val categories: List<CategoryOption> = emptyList(),
     val selectedCategoryId: Long? = null,
     val amountInput: String = "",
-    val dateLabel: String = "\u9009\u62e9\u65e5\u671f",
+    val amountDisplay: String = "\u00a50.00",
+    val dateLabel: String = "\u9009\u62e9\u65e5\u671f\u65f6\u95f4",
     val dateMillis: Long = System.currentTimeMillis(),
     val merchantInput: String = "",
     val remarkInput: String = "",
     val isEditing: Boolean = false,
-    val submitLabel: String = "\u4fdd\u5b58\u8fd9\u7b14\u8bb0\u8d26",
-    val secondaryLabel: String = "\u6e05\u7a7a\u8868\u5355",
+    val submitLabel: String = "\u5b8c\u6210",
+    val secondaryLabel: String = "\u4fdd\u5b58\u518d\u8bb0",
+    val showDeleteButton: Boolean = false,
     val showOcrPrefillHint: Boolean = false,
     val ocrPrefillTitle: String = "",
     val ocrPrefillBody: String = "",
-    val transactions: List<TransactionListItem> = emptyList(),
-    val emptyTitle: String = "\u8fd8\u6ca1\u6709\u4ea4\u6613\u8bb0\u5f55",
-    val emptyBody: String = "\u5148\u4fdd\u5b58\u4e00\u7b14\u6536\u5165\u6216\u652f\u51fa\uff0c\u8fd9\u91cc\u5c31\u4f1a\u5f00\u59cb\u51fa\u73b0\u771f\u5b9e\u8bb0\u5f55\u3002",
 )
 
 sealed interface TransactionEvent {
     data class Message(val message: String) : TransactionEvent
+    data object SavedAndClose : TransactionEvent
 }

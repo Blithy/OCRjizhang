@@ -112,6 +112,13 @@
             app:exitAnim="@anim/nav_exit_forward"
             app:popEnterAnim="@anim/nav_enter_back"
             app:popExitAnim="@anim/nav_exit_back" />
+        <action
+            android:id="@+id/action_transactionEditorFragment_to_ocrFragment"
+            app:destination="@id/ocrFragment"
+            app:enterAnim="@anim/nav_enter_forward"
+            app:exitAnim="@anim/nav_exit_forward"
+            app:popEnterAnim="@anim/nav_enter_back"
+            app:popExitAnim="@anim/nav_exit_back" />
         <argument
             android:name="prefillAmount"
             app:argType="string"

@@ -83,7 +83,6 @@ class TransactionViewModel @Inject constructor(
         editingTransactionId,
         fromOcrPrefill,
         categoriesState,
-        transactionsState,
     ) { values: Array<Any?> ->
         val userId = values[0] as Long?
         val type = values[1] as RecordType
@@ -96,56 +95,50 @@ class TransactionViewModel @Inject constructor(
         val showOcrPrefill = values[8] as Boolean
         @Suppress("UNCHECKED_CAST")
         val categories = values[9] as List<CategoryEntity>
-        @Suppress("UNCHECKED_CAST")
-        val transactions = values[10] as List<TransactionEntity>
 
-        val effectiveCategoryId = categories
-            .firstOrNull { it.id == manualCategoryId }
-            ?.id
+        val effectiveCategoryId = categories.firstOrNull { it.id == manualCategoryId }?.id
             ?: categories.firstOrNull()?.id
 
         TransactionUiState(
             isLoading = userId == null,
             selectedType = type,
-            categories = categories.map { CategoryOption(id = it.id, name = it.name) },
+            categories = categories.map { category ->
+                CategoryOption(
+                    id = category.id,
+                    name = category.name,
+                    symbol = category.name.take(1),
+                    isSelected = category.id == effectiveCategoryId,
+                )
+            },
             selectedCategoryId = effectiveCategoryId,
             amountInput = amount,
-            dateLabel = AccountingFormatters.formatDate(selectedDate),
+            amountDisplay = formatAmountDisplay(amount),
+            dateLabel = AccountingFormatters.formatDateTime(selectedDate),
             dateMillis = selectedDate,
             merchantInput = merchant,
             remarkInput = remark,
             isEditing = editingId != null,
             submitLabel = if (editingId == null) {
-                "\u4fdd\u5b58\u8fd9\u7b14\u8bb0\u8d26"
+                "完成"
             } else {
-                "\u66f4\u65b0\u8fd9\u7b14\u8bb0\u8d26"
+                "更新完成"
             },
             secondaryLabel = if (editingId == null) {
-                "\u6e05\u7a7a\u8868\u5355"
+                "保存再记"
             } else {
-                "\u53d6\u6d88\u7f16\u8f91"
+                "更新后继续"
             },
+            showDeleteButton = editingId != null,
             showOcrPrefillHint = showOcrPrefill,
             ocrPrefillTitle = if (showOcrPrefill) {
-                "\u5df2\u5e26\u5165 OCR \u8bc6\u522b\u7ed3\u679c"
+                "已带入 OCR 识别结果"
             } else {
                 ""
             },
             ocrPrefillBody = if (showOcrPrefill) {
-                "\u8fd9\u7b14\u652f\u51fa\u5df2\u9884\u586b\u91d1\u989d\u3001\u5546\u6237\u548c\u65e5\u671f\uff0c\u518d\u68c0\u67e5\u5206\u7c7b\u6216\u8865\u5145\u5907\u6ce8\u540e\u5c31\u53ef\u4ee5\u76f4\u63a5\u4fdd\u5b58\u3002"
+                "金额、商户和时间已经预填好，你可以补充分类或备注后直接保存。"
             } else {
                 ""
-            },
-            transactions = transactions.map(::toListItem),
-            emptyTitle = if (userId == null) {
-                "\u8bf7\u5148\u767b\u5f55\u540e\u518d\u8bb0\u8d26"
-            } else {
-                "\u8fd8\u6ca1\u6709\u4ea4\u6613\u8bb0\u5f55"
-            },
-            emptyBody = if (userId == null) {
-                "\u5f53\u524d\u6ca1\u6709\u53ef\u7528\u4f1a\u8bdd\uff0c\u91cd\u65b0\u767b\u5f55\u540e\u5c31\u80fd\u7ee7\u7eed\u8bb0\u8d26\u3002"
-            } else {
-                "\u5148\u4fdd\u5b58\u4e00\u7b14\u6536\u5165\u6216\u652f\u51fa\uff0c\u8fd9\u91cc\u5c31\u4f1a\u5f00\u59cb\u51fa\u73b0\u771f\u5b9e\u8bb0\u5f55\u3002"
             },
         )
     }.stateIn(
@@ -187,10 +180,6 @@ class TransactionViewModel @Inject constructor(
         selectedCategoryId.value = categoryId
     }
 
-    fun onAmountChanged(value: String) {
-        amountInput.value = value
-    }
-
     fun onMerchantChanged(value: String) {
         merchantInput.value = value
     }
@@ -201,6 +190,41 @@ class TransactionViewModel @Inject constructor(
 
     fun onDateSelected(selectedMillis: Long) {
         dateMillis.value = selectedMillis
+    }
+
+    fun appendAmountDigit(token: String) {
+        val current = amountInput.value
+        val updated = if (current.contains(".")) {
+            val fraction = current.substringAfter('.', "")
+            if (fraction.length >= 2) {
+                current
+            } else {
+                current + token.take(2 - fraction.length)
+            }
+        } else {
+            current + token
+        }
+        amountInput.value = normalizeAmount(updated)
+    }
+
+    fun appendDecimalPoint() {
+        val current = amountInput.value
+        if (current.contains('.')) return
+        amountInput.value = if (current.isBlank()) {
+            "0."
+        } else {
+            "$current."
+        }
+    }
+
+    fun removeLastAmountChar() {
+        val current = amountInput.value
+        if (current.isBlank()) return
+        amountInput.value = current.dropLast(1)
+    }
+
+    fun clearAmount() {
+        amountInput.value = ""
     }
 
     fun applyPrefill(
@@ -214,7 +238,7 @@ class TransactionViewModel @Inject constructor(
 
         var hasAnyPrefill = false
         if (amount.isNotBlank()) {
-            amountInput.value = amount
+            amountInput.value = normalizeAmount(amount)
             hasAnyPrefill = true
         }
         if (merchant.isNotBlank()) {
@@ -232,7 +256,7 @@ class TransactionViewModel @Inject constructor(
         if (hasAnyPrefill) {
             selectedType.value = RecordType.EXPENSE
             fromOcrPrefill.value = true
-            emitMessage("\u5df2\u5e26\u5165 OCR \u8bc6\u522b\u7ed3\u679c\uff0c\u53ef\u624b\u52a8\u8c03\u6574\u540e\u518d\u4fdd\u5b58")
+            emitMessage("已带入 OCR 识别结果，可手动调整后再保存")
         }
     }
 
@@ -240,22 +264,69 @@ class TransactionViewModel @Inject constructor(
         pendingEditRequestId.value = transactionId
     }
 
-    fun submit() {
+    fun saveAndClose() {
+        persistTransaction(closeAfterSave = true)
+    }
+
+    fun saveAndContinue() {
+        persistTransaction(closeAfterSave = false)
+    }
+
+    fun startEditing(transactionId: Long) {
+        pendingEditRequestId.value = transactionId
+    }
+
+    fun clearForm() {
+        editingTransactionId.value = null
+        fromOcrPrefill.value = false
+        amountInput.value = ""
+        dateMillis.value = System.currentTimeMillis()
+        merchantInput.value = ""
+        remarkInput.value = ""
+        selectedCategoryId.value = null
+    }
+
+    fun deleteCurrentTransaction() {
+        val userId = currentUserId.value
+        val transactionId = editingTransactionId.value
+        if (userId == null) {
+            emitMessage("登录状态已失效，请重新登录")
+            return
+        }
+        if (transactionId == null) {
+            emitMessage("当前没有可删除的记录")
+            return
+        }
+
+        viewModelScope.launch {
+            runCatching {
+                transactionRepository.deleteTransaction(userId, transactionId)
+            }.onSuccess {
+                clearForm()
+                emitMessage("交易已删除")
+                emitCloseEvent()
+            }.onFailure { throwable ->
+                emitMessage(throwable.message ?: "删除失败，请稍后重试")
+            }
+        }
+    }
+
+    private fun persistTransaction(closeAfterSave: Boolean) {
         val userId = currentUserId.value
         if (userId == null) {
-            emitMessage("\u767b\u5f55\u72b6\u6001\u5df2\u5931\u6548\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55")
+            emitMessage("登录状态已失效，请重新登录")
             return
         }
 
         val amountFen = AccountingFormatters.parseToFen(amountInput.value)
         if (amountFen == null) {
-            emitMessage("\u8bf7\u8f93\u5165\u6b63\u786e\u7684\u91d1\u989d\uff0c\u6700\u591a\u4fdd\u7559\u4e24\u4f4d\u5c0f\u6570")
+            emitMessage("请先输入正确金额，最多保留两位小数")
             return
         }
 
         val categoryId = uiState.value.selectedCategoryId
         if (categoryId == null) {
-            emitMessage("\u8bf7\u5148\u9009\u62e9\u5206\u7c7b")
+            emitMessage("请先选择分类")
             return
         }
 
@@ -285,50 +356,16 @@ class TransactionViewModel @Inject constructor(
                     )
                 }
             }.onSuccess {
-                emitMessage(
-                    if (editingTransactionId.value == null) {
-                        "\u4ea4\u6613\u5df2\u4fdd\u5b58"
-                    } else {
-                        "\u4ea4\u6613\u5df2\u66f4\u65b0"
-                    },
-                )
-                clearForm()
-            }.onFailure { throwable ->
-                emitMessage(throwable.message ?: "\u4fdd\u5b58\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5")
-            }
-        }
-    }
-
-    fun startEditing(transactionId: Long) {
-        pendingEditRequestId.value = transactionId
-    }
-
-    fun clearForm() {
-        editingTransactionId.value = null
-        fromOcrPrefill.value = false
-        amountInput.value = ""
-        dateMillis.value = System.currentTimeMillis()
-        merchantInput.value = ""
-        remarkInput.value = ""
-        selectedCategoryId.value = null
-    }
-
-    fun deleteTransaction(transactionId: Long) {
-        val userId = currentUserId.value
-        if (userId == null) {
-            emitMessage("\u767b\u5f55\u72b6\u6001\u5df2\u5931\u6548\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55")
-            return
-        }
-        viewModelScope.launch {
-            runCatching {
-                transactionRepository.deleteTransaction(userId, transactionId)
-            }.onSuccess {
-                if (editingTransactionId.value == transactionId) {
+                val editing = editingTransactionId.value != null
+                if (closeAfterSave) {
+                    emitMessage(if (editing) "交易已更新" else "交易已保存")
+                    emitCloseEvent()
+                } else {
+                    emitMessage(if (editing) "交易已更新，继续记下一笔" else "交易已保存，继续记下一笔")
                     clearForm()
                 }
-                emitMessage("\u4ea4\u6613\u5df2\u5220\u9664")
             }.onFailure { throwable ->
-                emitMessage(throwable.message ?: "\u5220\u9664\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5")
+                emitMessage(throwable.message ?: "保存失败，请稍后重试")
             }
         }
     }
@@ -349,26 +386,38 @@ class TransactionViewModel @Inject constructor(
         remarkInput.value = transaction.remark.orEmpty()
     }
 
-    private fun toListItem(entity: TransactionEntity): TransactionListItem {
-        val subtitleParts = buildList {
-            entity.merchantName?.takeIf { it.isNotBlank() }?.let(::add)
-            entity.remark?.takeIf { it.isNotBlank() }?.let(::add)
+    private fun normalizeAmount(raw: String): String {
+        if (raw.isBlank()) return ""
+        if (!raw.contains('.')) {
+            return raw.trimStart('0').ifBlank { "0" }
         }
-        return TransactionListItem(
-            id = entity.id,
-            title = entity.categoryName,
-            subtitle = subtitleParts.joinToString(" \u00b7 ").ifBlank {
-                "\u65e0\u5907\u6ce8\u4fe1\u606f"
-            },
-            meta = AccountingFormatters.formatDateTime(entity.transactionTime),
-            amountLabel = AccountingFormatters.formatFen(entity.amountFen),
-            type = entity.type,
-        )
+
+        val hasTrailingDot = raw.endsWith(".")
+        val integerPart = raw.substringBefore('.').trimStart('0').ifBlank { "0" }
+        val fractionPart = raw.substringAfter('.', "").take(2)
+        return if (hasTrailingDot && fractionPart.isEmpty()) {
+            "$integerPart."
+        } else {
+            "$integerPart.$fractionPart"
+        }
     }
+
+    private fun formatAmountDisplay(raw: String): String =
+        if (raw.isBlank()) {
+            "¥0.00"
+        } else {
+            "¥$raw"
+        }
 
     private fun emitMessage(message: String) {
         viewModelScope.launch {
             _eventFlow.emit(TransactionEvent.Message(message))
+        }
+    }
+
+    private fun emitCloseEvent() {
+        viewModelScope.launch {
+            _eventFlow.emit(TransactionEvent.SavedAndClose)
         }
     }
 }

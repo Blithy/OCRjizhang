@@ -1,11 +1,12 @@
 package com.example.ocrjizhang.ui.transaction
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -14,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.recyclerview.widget.GridLayoutManager
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.data.local.entity.RecordType
 import com.example.ocrjizhang.databinding.FragmentTransactionEditorBinding
@@ -32,33 +34,10 @@ class TransactionEditorFragment : Fragment() {
     private val viewModel: TransactionViewModel by viewModels()
     private val args: TransactionEditorFragmentArgs by navArgs()
 
-    private var categoryOptions: List<CategoryOption> = emptyList()
-    private val transactionAdapter by lazy {
-        TransactionAdapter(
-            showActions = true,
-            onOpen = { item ->
-                viewModel.startEditing(item.id)
-                binding.scrollView.post {
-                    binding.scrollView.smoothScrollTo(0, 0)
-                }
-            },
-            onEdit = { item ->
-                viewModel.startEditing(item.id)
-                binding.scrollView.post {
-                    binding.scrollView.smoothScrollTo(0, 0)
-                }
-            },
-            onDelete = { item ->
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.transaction_delete_title)
-                    .setMessage(getString(R.string.transaction_delete_message, item.amountLabel))
-                    .setNegativeButton(R.string.action_cancel, null)
-                    .setPositiveButton(R.string.action_delete) { _, _ ->
-                        viewModel.deleteTransaction(item.id)
-                    }
-                    .show()
-            },
-        )
+    private val categoryAdapter by lazy {
+        QuickCategoryAdapter { option ->
+            viewModel.onCategorySelected(option.id)
+        }
     }
 
     override fun onCreateView(
@@ -73,31 +52,50 @@ class TransactionEditorFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.transactionList.adapter = transactionAdapter
+        binding.categoryGrid.layoutManager = GridLayoutManager(requireContext(), 4)
+        binding.categoryGrid.adapter = categoryAdapter
+
         binding.expenseButton.setOnClickListener { viewModel.onTypeSelected(RecordType.EXPENSE) }
         binding.incomeButton.setOnClickListener { viewModel.onTypeSelected(RecordType.INCOME) }
-        binding.amountEdit.doAfterTextChangedCompat(viewModel::onAmountChanged)
         binding.merchantEdit.doAfterTextChangedCompat(viewModel::onMerchantChanged)
         binding.remarkEdit.doAfterTextChangedCompat(viewModel::onRemarkChanged)
-        binding.categoryDropdown.setOnItemClickListener { _, _, position, _ ->
-            categoryOptions.getOrNull(position)?.let { option ->
-                viewModel.onCategorySelected(option.id)
-            }
-        }
         binding.dateButton.setOnClickListener {
             showDatePicker(viewModel.uiState.value.dateMillis)
-        }
-        binding.saveButton.setOnClickListener {
-            viewModel.submit()
-        }
-        binding.secondaryButton.setOnClickListener {
-            viewModel.clearForm()
         }
         binding.manageCategoryButton.setOnClickListener {
             findNavController().navigate(
                 TransactionEditorFragmentDirections.actionTransactionEditorFragmentToCategoryFragment(),
             )
         }
+        binding.ocrAssistButton.setOnClickListener {
+            findNavController().navigate(
+                TransactionEditorFragmentDirections.actionTransactionEditorFragmentToOcrFragment(),
+            )
+        }
+        binding.deleteCurrentButton.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.transaction_delete_title)
+                .setMessage(R.string.transaction_delete_current_message)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.action_delete) { _, _ ->
+                    viewModel.deleteCurrentTransaction()
+                }
+                .show()
+        }
+        binding.saveButton.setOnClickListener {
+            viewModel.saveAndClose()
+        }
+        binding.secondaryButton.setOnClickListener {
+            viewModel.saveAndContinue()
+        }
+        binding.deleteButton.setOnClickListener {
+            viewModel.removeLastAmountChar()
+        }
+        binding.clearButton.setOnClickListener {
+            viewModel.clearAmount()
+        }
+
+        bindKeypad()
 
         viewModel.applyPrefill(
             amount = args.prefillAmount,
@@ -112,8 +110,14 @@ class TransactionEditorFragment : Fragment() {
                 launch { viewModel.uiState.collect(::render) }
                 launch {
                     viewModel.eventFlow.collect { event ->
-                        if (event is TransactionEvent.Message) {
-                            Snackbar.make(binding.root, event.message, Snackbar.LENGTH_SHORT).show()
+                        when (event) {
+                            is TransactionEvent.Message -> {
+                                Snackbar.make(binding.root, event.message, Snackbar.LENGTH_SHORT).show()
+                            }
+
+                            TransactionEvent.SavedAndClose -> {
+                                findNavController().popBackStack()
+                            }
                         }
                     }
                 }
@@ -128,23 +132,29 @@ class TransactionEditorFragment : Fragment() {
             else -> getString(R.string.page_transaction_editor)
         }
 
-        binding.amountLayout.error = null
-        binding.transactionList.isVisible = state.transactions.isNotEmpty()
-        binding.emptyStateGroup.isVisible = state.transactions.isEmpty()
-        binding.emptyTitle.text = state.emptyTitle
-        binding.emptyBody.text = state.emptyBody
-        binding.saveButton.text = state.submitLabel
-        binding.secondaryButton.text = state.secondaryLabel
-        binding.dateButton.text = state.dateLabel
         binding.ocrPrefillCard.isVisible = state.showOcrPrefillHint
         binding.ocrPrefillTitle.text = state.ocrPrefillTitle
         binding.ocrPrefillBody.text = state.ocrPrefillBody
+        binding.deleteCurrentButton.isVisible = state.showDeleteButton
+        binding.saveButton.text = state.submitLabel
+        binding.secondaryButton.text = state.secondaryLabel
+        binding.dateButton.text = state.dateLabel
+        binding.amountValue.text = state.amountDisplay
+        binding.amountValue.setTextColor(
+            ContextCompat.getColor(
+                requireContext(),
+                if (state.selectedType == RecordType.EXPENSE) {
+                    R.color.negative
+                } else {
+                    R.color.positive
+                },
+            ),
+        )
         binding.categoryHelperText.text = if (state.categories.isEmpty()) {
             getString(R.string.transaction_category_helper_empty)
         } else {
             getString(R.string.transaction_category_helper)
         }
-
         binding.typeToggleGroup.check(
             if (state.selectedType == RecordType.EXPENSE) {
                 R.id.expenseButton
@@ -153,10 +163,6 @@ class TransactionEditorFragment : Fragment() {
             },
         )
 
-        if (binding.amountEdit.text?.toString() != state.amountInput) {
-            binding.amountEdit.setText(state.amountInput)
-            binding.amountEdit.setSelection(state.amountInput.length)
-        }
         if (binding.merchantEdit.text?.toString() != state.merchantInput) {
             binding.merchantEdit.setText(state.merchantInput)
             binding.merchantEdit.setSelection(state.merchantInput.length)
@@ -166,26 +172,31 @@ class TransactionEditorFragment : Fragment() {
             binding.remarkEdit.setSelection(state.remarkInput.length)
         }
 
-        val categoryNames = state.categories.map { it.name }
-        if (categoryOptions != state.categories) {
-            categoryOptions = state.categories
-            binding.categoryDropdown.setAdapter(
-                ArrayAdapter(
-                    requireContext(),
-                    android.R.layout.simple_list_item_1,
-                    categoryNames,
-                ),
-            )
-        }
-        val selectedCategoryName = state.categories
-            .firstOrNull { it.id == state.selectedCategoryId }
-            ?.name
-            .orEmpty()
-        if (binding.categoryDropdown.text?.toString() != selectedCategoryName) {
-            binding.categoryDropdown.setText(selectedCategoryName, false)
-        }
+        categoryAdapter.submitList(state.categories)
+    }
 
-        transactionAdapter.submitList(state.transactions)
+    private fun bindKeypad() {
+        val digitMap = mapOf(
+            binding.key1 to "1",
+            binding.key2 to "2",
+            binding.key3 to "3",
+            binding.key4 to "4",
+            binding.key5 to "5",
+            binding.key6 to "6",
+            binding.key7 to "7",
+            binding.key8 to "8",
+            binding.key9 to "9",
+            binding.key0 to "0",
+            binding.key00 to "00",
+        )
+        digitMap.forEach { (button, token) ->
+            button.setOnClickListener {
+                viewModel.appendAmountDigit(token)
+            }
+        }
+        binding.keyDot.setOnClickListener {
+            viewModel.appendDecimalPoint()
+        }
     }
 
     private fun showDatePicker(currentMillis: Long) {
@@ -194,15 +205,12 @@ class TransactionEditorFragment : Fragment() {
             requireContext(),
             { _, year, month, dayOfMonth ->
                 val picked = Calendar.getInstance().apply {
+                    timeInMillis = currentMillis
                     set(Calendar.YEAR, year)
                     set(Calendar.MONTH, month)
                     set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                    set(Calendar.HOUR_OF_DAY, 12)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
                 }
-                viewModel.onDateSelected(picked.timeInMillis)
+                showTimePicker(picked)
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
@@ -210,9 +218,25 @@ class TransactionEditorFragment : Fragment() {
         ).show()
     }
 
+    private fun showTimePicker(calendar: Calendar) {
+        TimePickerDialog(
+            requireContext(),
+            { _, hourOfDay, minute ->
+                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                calendar.set(Calendar.MINUTE, minute)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                viewModel.onDateSelected(calendar.timeInMillis)
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true,
+        ).show()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        binding.transactionList.adapter = null
+        binding.categoryGrid.adapter = null
         _binding = null
     }
 }
