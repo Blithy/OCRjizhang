@@ -3,7 +3,6 @@ package com.example.ocrjizhang.ui.transaction
 import android.app.DatePickerDialog
 import android.app.Dialog
 import android.app.TimePickerDialog
-import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -12,10 +11,6 @@ import android.widget.EditText
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -58,10 +53,6 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
             behavior.isDraggable = true
             behavior.state = BottomSheetBehavior.STATE_EXPANDED
             setCanceledOnTouchOutside(true)
-            window?.let { window ->
-                WindowCompat.setDecorFitsSystemWindows(window, false)
-                window.navigationBarColor = Color.TRANSPARENT
-            }
         }
     }
 
@@ -93,7 +84,6 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
 
         binding.categoryGrid.layoutManager = GridLayoutManager(requireContext(), 5)
         binding.categoryGrid.adapter = categoryAdapter
-        applySystemBarInsets()
 
         binding.cancelButton.setOnClickListener { dismiss() }
         binding.expenseButton.setOnClickListener { viewModel.onTypeSelected(RecordType.EXPENSE) }
@@ -207,23 +197,6 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
             button.setOnClickListener { viewModel.appendAmountDigit(token) }
         }
         binding.keyDot.setOnClickListener { viewModel.appendDecimalPoint() }
-    }
-
-    private fun applySystemBarInsets() {
-        val baseContentBottom = binding.inputPanelContent.paddingBottom
-        val baseGridBottom = binding.categoryGrid.paddingBottom
-
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, windowInsets ->
-            val navigationInsets = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars())
-            binding.inputPanelContent.updatePadding(
-                bottom = baseContentBottom + navigationInsets.bottom,
-            )
-            binding.categoryGrid.updatePadding(
-                bottom = baseGridBottom + navigationInsets.bottom / 2,
-            )
-            windowInsets
-        }
-        ViewCompat.requestApplyInsets(binding.root)
     }
 
     private fun showDatePicker(currentMillis: Long) {
