@@ -221,6 +221,16 @@
                     android:minWidth="0dp"
                     android:text="@string/transaction_detail_placeholder" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/accountButton"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="0dp"
+                    android:text="@string/transaction_account_placeholder"
+                    app:icon="@drawable/ic_assets_24"
+                    app:iconTint="@color/ink_secondary" />
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"

@@ -9,6 +9,13 @@ data class CategoryOption(
     val isSelected: Boolean,
 )
 
+data class AccountOption(
+    val id: Long,
+    val name: String,
+    val symbol: String,
+    val isSelected: Boolean,
+)
+
 data class TransactionListItem(
     val id: Long,
     val title: String,
@@ -23,6 +30,9 @@ data class TransactionUiState(
     val selectedType: RecordType = RecordType.EXPENSE,
     val categories: List<CategoryOption> = emptyList(),
     val selectedCategoryId: Long? = null,
+    val accounts: List<AccountOption> = emptyList(),
+    val selectedAccountId: Long? = null,
+    val accountLabel: String = "\u9009\u62e9\u8d44\u91d1\u8d26\u6237",
     val amountInput: String = "",
     val amountDisplay: String = "\u00a50.00",
     val dateLabel: String = "\u9009\u62e9\u65e5\u671f\u65f6\u95f4",

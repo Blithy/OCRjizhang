@@ -1,6 +1,7 @@
 package com.example.ocrjizhang.data.repository
 
 import androidx.room.withTransaction
+import com.example.ocrjizhang.data.local.dao.AccountDao
 import com.example.ocrjizhang.data.local.dao.CategoryDao
 import com.example.ocrjizhang.data.local.dao.SyncOperationDao
 import com.example.ocrjizhang.data.local.dao.TransactionDao
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 @Singleton
 class TransactionRepository @Inject constructor(
     private val database: AppDatabase,
+    private val accountDao: AccountDao,
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
     private val syncOperationDao: SyncOperationDao,
@@ -44,11 +46,13 @@ class TransactionRepository @Inject constructor(
         userId: Long,
         type: RecordType,
         amountFen: Long,
+        accountId: Long,
         categoryId: Long,
         transactionTime: Long,
         merchantName: String,
         remark: String,
     ) {
+        val account = validateAccount(userId, accountId)
         val category = validateCategory(userId, type, categoryId)
         val now = System.currentTimeMillis()
         val entity = TransactionEntity(
@@ -56,6 +60,8 @@ class TransactionRepository @Inject constructor(
             userId = userId,
             type = type,
             amountFen = amountFen,
+            accountId = account.id,
+            accountName = account.name,
             categoryId = category.id,
             categoryName = category.name,
             remark = remark.trim().ifBlank { null },
@@ -69,6 +75,7 @@ class TransactionRepository @Inject constructor(
 
         database.withTransaction {
             transactionDao.upsert(entity)
+            applyBalanceDelta(account.id, signedAmount(type, amountFen), now)
             enqueueTransactionSync(entity, SyncOperationType.CREATE, now)
         }
     }
@@ -78,17 +85,21 @@ class TransactionRepository @Inject constructor(
         transactionId: Long,
         type: RecordType,
         amountFen: Long,
+        accountId: Long,
         categoryId: Long,
         transactionTime: Long,
         merchantName: String,
         remark: String,
     ) {
         val existing = getOwnedTransaction(userId, transactionId)
+        val account = validateAccount(userId, accountId)
         val category = validateCategory(userId, type, categoryId)
         val now = System.currentTimeMillis()
         val entity = existing.copy(
             type = type,
             amountFen = amountFen,
+            accountId = account.id,
+            accountName = account.name,
             categoryId = category.id,
             categoryName = category.name,
             remark = remark.trim().ifBlank { null },
@@ -103,7 +114,9 @@ class TransactionRepository @Inject constructor(
         )
 
         database.withTransaction {
+            rollbackBalanceEffect(existing, now)
             transactionDao.upsert(entity)
+            applyBalanceDelta(account.id, signedAmount(type, amountFen), now)
             enqueueTransactionSync(entity, SyncOperationType.UPDATE, now)
         }
     }
@@ -112,10 +125,16 @@ class TransactionRepository @Inject constructor(
         val existing = getOwnedTransaction(userId, transactionId)
         val now = System.currentTimeMillis()
         database.withTransaction {
+            rollbackBalanceEffect(existing, now)
             transactionDao.deleteById(transactionId)
             enqueueTransactionSync(existing, SyncOperationType.DELETE, now)
         }
     }
+
+    private suspend fun validateAccount(userId: Long, accountId: Long) =
+        accountDao.getAccountById(accountId)
+            ?.takeIf { it.userId == userId }
+            ?: error("当前账户不可用，请重新选择")
 
     private suspend fun validateCategory(userId: Long, type: RecordType, categoryId: Long) =
         categoryDao.getCategoryById(categoryId)
@@ -126,6 +145,24 @@ class TransactionRepository @Inject constructor(
         transactionDao.getTransactionById(transactionId)
             ?.takeIf { it.userId == userId }
             ?: error("交易不存在或无权访问")
+
+    private suspend fun rollbackBalanceEffect(entity: TransactionEntity, updatedAt: Long) {
+        val accountId = entity.accountId ?: return
+        applyBalanceDelta(accountId, -signedAmount(entity.type, entity.amountFen), updatedAt)
+    }
+
+    private suspend fun applyBalanceDelta(accountId: Long, deltaFen: Long, updatedAt: Long) {
+        val account = accountDao.getAccountById(accountId) ?: error("账户不存在")
+        accountDao.upsert(
+            account.copy(
+                balanceFen = account.balanceFen + deltaFen,
+                updatedAt = updatedAt,
+            ),
+        )
+    }
+
+    private fun signedAmount(type: RecordType, amountFen: Long): Long =
+        if (type == RecordType.INCOME) amountFen else -amountFen
 
     private suspend fun enqueueTransactionSync(
         entity: TransactionEntity,

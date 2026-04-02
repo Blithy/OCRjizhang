@@ -2,8 +2,10 @@ package com.example.ocrjizhang.ui.transaction
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ocrjizhang.data.local.entity.AccountEntity
 import com.example.ocrjizhang.data.local.entity.CategoryEntity
 import com.example.ocrjizhang.data.local.entity.RecordType
+import com.example.ocrjizhang.data.repository.AccountRepository
 import com.example.ocrjizhang.data.local.entity.TransactionEntity
 import com.example.ocrjizhang.data.repository.CategoryRepository
 import com.example.ocrjizhang.data.repository.SessionManager
@@ -31,12 +33,14 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
+    private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val currentUserId = MutableStateFlow<Long?>(null)
     private val selectedType = MutableStateFlow(RecordType.EXPENSE)
+    private val selectedAccountId = MutableStateFlow<Long?>(null)
     private val selectedCategoryId = MutableStateFlow<Long?>(null)
     private val amountInput = MutableStateFlow("")
     private val dateMillis = MutableStateFlow(System.currentTimeMillis())
@@ -72,9 +76,23 @@ class TransactionViewModel @Inject constructor(
         initialValue = emptyList(),
     )
 
+    private val accountsState = currentUserId
+        .flatMapLatest { userId ->
+            if (userId == null) {
+                flowOf(emptyList())
+            } else {
+                accountRepository.observeAccounts(userId)
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
+
     val uiState: StateFlow<TransactionUiState> = combine(
         currentUserId,
         selectedType,
+        selectedAccountId,
         selectedCategoryId,
         amountInput,
         dateMillis,
@@ -82,26 +100,42 @@ class TransactionViewModel @Inject constructor(
         remarkInput,
         editingTransactionId,
         fromOcrPrefill,
+        accountsState,
         categoriesState,
     ) { values: Array<Any?> ->
         val userId = values[0] as Long?
         val type = values[1] as RecordType
-        val manualCategoryId = values[2] as Long?
-        val amount = values[3] as String
-        val selectedDate = values[4] as Long
-        val merchant = values[5] as String
-        val remark = values[6] as String
-        val editingId = values[7] as Long?
-        val showOcrPrefill = values[8] as Boolean
+        val manualAccountId = values[2] as Long?
+        val manualCategoryId = values[3] as Long?
+        val amount = values[4] as String
+        val selectedDate = values[5] as Long
+        val merchant = values[6] as String
+        val remark = values[7] as String
+        val editingId = values[8] as Long?
+        val showOcrPrefill = values[9] as Boolean
         @Suppress("UNCHECKED_CAST")
-        val categories = values[9] as List<CategoryEntity>
+        val accounts = values[10] as List<AccountEntity>
+        @Suppress("UNCHECKED_CAST")
+        val categories = values[11] as List<CategoryEntity>
 
+        val effectiveAccountId = accounts.firstOrNull { it.id == manualAccountId }?.id
+            ?: accounts.firstOrNull()?.id
         val effectiveCategoryId = categories.firstOrNull { it.id == manualCategoryId }?.id
             ?: categories.firstOrNull()?.id
 
         TransactionUiState(
             isLoading = userId == null,
             selectedType = type,
+            accounts = accounts.map { account ->
+                AccountOption(
+                    id = account.id,
+                    name = account.name,
+                    symbol = account.symbol,
+                    isSelected = account.id == effectiveAccountId,
+                )
+            },
+            selectedAccountId = effectiveAccountId,
+            accountLabel = accounts.firstOrNull { it.id == effectiveAccountId }?.name ?: "选择资金账户",
             categories = categories.map { category ->
                 CategoryOption(
                     id = category.id,
@@ -155,6 +189,9 @@ class TransactionViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .collect { userId ->
                     currentUserId.value = userId
+                    if (userId != null) {
+                        accountRepository.ensureDefaultAccounts(userId)
+                    }
                 }
         }
 
@@ -179,6 +216,10 @@ class TransactionViewModel @Inject constructor(
 
     fun onCategorySelected(categoryId: Long) {
         selectedCategoryId.value = categoryId
+    }
+
+    fun onAccountSelected(accountId: Long) {
+        selectedAccountId.value = accountId
     }
 
     fun onMerchantChanged(value: String) {
@@ -331,6 +372,12 @@ class TransactionViewModel @Inject constructor(
             return
         }
 
+        val accountId = uiState.value.selectedAccountId
+        if (accountId == null) {
+            emitMessage("请先选择资金账户")
+            return
+        }
+
         viewModelScope.launch {
             runCatching {
                 val editingId = editingTransactionId.value
@@ -339,6 +386,7 @@ class TransactionViewModel @Inject constructor(
                         userId = userId,
                         type = selectedType.value,
                         amountFen = amountFen,
+                        accountId = accountId,
                         categoryId = categoryId,
                         transactionTime = dateMillis.value,
                         merchantName = merchantInput.value,
@@ -350,6 +398,7 @@ class TransactionViewModel @Inject constructor(
                         transactionId = editingId,
                         type = selectedType.value,
                         amountFen = amountFen,
+                        accountId = accountId,
                         categoryId = categoryId,
                         transactionTime = dateMillis.value,
                         merchantName = merchantInput.value,
@@ -380,6 +429,7 @@ class TransactionViewModel @Inject constructor(
         editingTransactionId.value = transaction.id
         fromOcrPrefill.value = false
         selectedType.value = transaction.type
+        selectedAccountId.value = transaction.accountId
         selectedCategoryId.value = transaction.categoryId
         amountInput.value = AccountingFormatters.formatFenForInput(transaction.amountFen)
         dateMillis.value = transaction.transactionTime

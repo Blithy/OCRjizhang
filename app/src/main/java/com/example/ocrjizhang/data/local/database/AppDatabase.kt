@@ -26,7 +26,7 @@ import com.example.ocrjizhang.data.local.entity.UserEntity
         OcrRecordEntity::class,
         SyncOperationEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 @TypeConverters(AppTypeConverters::class)

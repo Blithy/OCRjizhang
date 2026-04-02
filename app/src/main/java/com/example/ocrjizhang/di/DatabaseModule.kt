@@ -29,6 +29,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "ocr_jizhang.db",
         ).addMigrations(DatabaseMigrations.MIGRATION_1_2)
+            .addMigrations(DatabaseMigrations.MIGRATION_2_3)
             .build()
 
     @Provides

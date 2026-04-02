@@ -92,6 +92,7 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
             showDatePicker(viewModel.uiState.value.dateMillis)
         }
         binding.detailButton.setOnClickListener { showDetailDialog() }
+        binding.accountButton.setOnClickListener { showAccountPicker() }
         binding.manageCategoryButton.setOnClickListener {
             rootNavController().navigate(R.id.categoryFragment)
             dismiss()
@@ -158,6 +159,7 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
         binding.secondaryButton.text = state.secondaryLabel
         binding.dateButton.text = state.dateLabel
         binding.detailButton.text = state.detailLabel
+        binding.accountButton.text = state.accountLabel
         binding.amountValue.text = state.amountDisplay
         binding.amountValue.setTextColor(
             ContextCompat.getColor(
@@ -197,6 +199,26 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
             button.setOnClickListener { viewModel.appendAmountDigit(token) }
         }
         binding.keyDot.setOnClickListener { viewModel.appendDecimalPoint() }
+    }
+
+    private fun showAccountPicker() {
+        val accounts = latestState.accounts
+        if (accounts.isEmpty()) {
+            Snackbar.make(binding.root, R.string.transaction_account_empty, Snackbar.LENGTH_SHORT).show()
+            return
+        }
+
+        val selectedIndex = accounts.indexOfFirst { it.isSelected }.coerceAtLeast(0)
+        val labels = accounts.map { "${it.symbol} ${it.name}" }.toTypedArray()
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.transaction_account_dialog_title)
+            .setSingleChoiceItems(labels, selectedIndex) { dialog, which ->
+                viewModel.onAccountSelected(accounts[which].id)
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
     }
 
     private fun showDatePicker(currentMillis: Long) {

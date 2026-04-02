@@ -278,6 +278,8 @@ class SyncRepository @Inject constructor(
             userId = dto.userId,
             type = RecordType.valueOf(dto.type),
             amountFen = dto.amountFen,
+            accountId = null,
+            accountName = null,
             categoryId = dto.categoryId,
             categoryName = dto.categoryName,
             remark = dto.remark,
