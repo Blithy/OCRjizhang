@@ -12,27 +12,9 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/assets_headline"
-            android:textColor="@color/ink_primary"
-            android:textSize="28sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:lineSpacingExtra="2dp"
-            android:text="@string/assets_headline_subtitle"
-            android:textColor="@color/ink_secondary"
-            android:textSize="14sp" />
-
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
             app:cardBackgroundColor="@color/primary_brand"
             app:cardCornerRadius="28dp"
             app:cardElevation="0dp">
