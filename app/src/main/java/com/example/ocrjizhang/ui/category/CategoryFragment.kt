@@ -225,11 +225,14 @@ class CategoryFragment : Fragment() {
 
     private fun handleExit() {
         if (shouldReturnToTransactionEntry) {
+            val activity = requireActivity()
+            val fragmentManager = activity.supportFragmentManager
+            val initialType = returnRecordType
             findNavController().popBackStack()
-            requireActivity().window.decorView.post {
+            activity.window.decorView.post {
                 TransactionEntryBottomSheet.show(
-                    fragmentManager = parentFragmentManager,
-                    initialType = returnRecordType,
+                    fragmentManager = fragmentManager,
+                    initialType = initialType,
                 )
             }
         } else {
@@ -242,7 +245,7 @@ class CategoryFragment : Fragment() {
         if (shouldReturnToTransactionEntry) {
             requireActivity().findViewById<MaterialToolbar>(R.id.topAppBar)
                 .setNavigationOnClickListener {
-                    findNavController().navigateUp()
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
                 }
         }
         binding.categoryList.adapter = null
