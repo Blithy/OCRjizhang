@@ -132,6 +132,8 @@
     <string name="category_badge_default">默认</string>
     <string name="label_category_name">分类名称</string>
     <string name="hint_category_name">请输入分类名称</string>
+    <string name="category_icon_section_title">选择分类图标</string>
+    <string name="category_icon_section_hint">挑一个最贴近含义的图标，后续在记账和分类列表里都会统一显示。</string>
     <string name="category_dialog_add_expense">新增支出分类</string>
     <string name="category_dialog_add_income">新增收入分类</string>
     <string name="category_dialog_edit">编辑分类</string>

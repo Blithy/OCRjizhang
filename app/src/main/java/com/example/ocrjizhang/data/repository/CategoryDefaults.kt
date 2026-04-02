@@ -20,7 +20,7 @@ object CategoryDefaults {
 
     private val templates = listOf(
         CategorySeedTemplate("餐饮", RecordType.EXPENSE, "food"),
-        CategorySeedTemplate("饮品", RecordType.EXPENSE, "food"),
+        CategorySeedTemplate("饮品", RecordType.EXPENSE, "coffee"),
         CategorySeedTemplate("买菜", RecordType.EXPENSE, "food"),
         CategorySeedTemplate("交通", RecordType.EXPENSE, "transport"),
         CategorySeedTemplate("打车", RecordType.EXPENSE, "transport"),
@@ -33,7 +33,7 @@ object CategoryDefaults {
         CategorySeedTemplate("住房", RecordType.EXPENSE, "home"),
         CategorySeedTemplate("水电", RecordType.EXPENSE, "home"),
         CategorySeedTemplate("旅行", RecordType.EXPENSE, "transport"),
-        CategorySeedTemplate("社交", RecordType.EXPENSE, "fun"),
+        CategorySeedTemplate("社交", RecordType.EXPENSE, "heart"),
         CategorySeedTemplate(UNCATEGORIZED_NAME, RecordType.EXPENSE, "more"),
         CategorySeedTemplate("工资", RecordType.INCOME, "wallet"),
         CategorySeedTemplate("奖金", RecordType.INCOME, "wallet"),

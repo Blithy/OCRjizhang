@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -108,20 +109,24 @@ class CategoryFragment : Fragment() {
         }
         showCategoryNameDialog(
             titleRes = title,
+            type = type,
             initialValue = "",
+            initialIconKey = CategoryIconRegistry.defaultKeyForType(type),
             positiveRes = R.string.action_create,
-        ) { name ->
-            viewModel.addCategory(name)
+        ) { name, iconKey ->
+            viewModel.addCategory(name, iconKey)
         }
     }
 
     private fun showEditDialog(item: CategoryListItem) {
         showCategoryNameDialog(
             titleRes = R.string.category_dialog_edit,
+            type = viewModel.uiState.value.selectedType,
             initialValue = item.name,
+            initialIconKey = item.iconKey,
             positiveRes = R.string.action_save,
-        ) { name ->
-            viewModel.updateCategory(item.id, name)
+        ) { name, iconKey ->
+            viewModel.updateCategory(item.id, name, iconKey)
         }
     }
 
@@ -138,15 +143,34 @@ class CategoryFragment : Fragment() {
 
     private fun showCategoryNameDialog(
         titleRes: Int,
+        type: RecordType,
         initialValue: String,
+        initialIconKey: String,
         positiveRes: Int,
-        onConfirmed: (String) -> Unit,
+        onConfirmed: (String, String) -> Unit,
     ) {
         val dialogBinding = layoutInflater.inflate(R.layout.dialog_category_form, null)
         val inputLayout = dialogBinding.findViewById<TextInputLayout>(R.id.categoryNameLayout)
         val inputView = dialogBinding.findViewById<EditText>(R.id.categoryNameEdit)
+        val iconRecycler = dialogBinding.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.iconRecycler)
         inputView.setText(initialValue)
         inputView.setSelection(inputView.text?.length ?: 0)
+        var selectedIconKey = initialIconKey
+            .takeIf { it.isNotBlank() }
+            ?: CategoryIconRegistry.defaultKeyForType(type)
+        lateinit var iconAdapter: CategoryIconPickerAdapter
+        iconAdapter = CategoryIconPickerAdapter { option ->
+            selectedIconKey = option.key
+            iconAdapter.updateSelectedKey(option.key)
+        }
+        iconRecycler.layoutManager = GridLayoutManager(requireContext(), 4)
+        iconRecycler.adapter = iconAdapter
+        iconRecycler.setHasFixedSize(true)
+        iconRecycler.isNestedScrollingEnabled = false
+        iconAdapter.submitOptions(
+            CategoryIconRegistry.selectableOptions(type),
+            selectedIconKey,
+        )
 
         val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(titleRes)
@@ -163,11 +187,14 @@ class CategoryFragment : Fragment() {
                     return@setOnClickListener
                 }
                 inputLayout.error = null
-                onConfirmed(value)
+                onConfirmed(value, selectedIconKey)
                 dialog.dismiss()
             }
         }
         dialog.show()
+        dialog.setOnDismissListener {
+            iconRecycler.adapter = null
+        }
     }
 
     override fun onDestroyView() {

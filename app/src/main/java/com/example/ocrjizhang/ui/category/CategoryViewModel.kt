@@ -90,22 +90,24 @@ class CategoryViewModel @Inject constructor(
         selectedType.value = type
     }
 
-    fun addCategory(name: String) {
+    fun addCategory(name: String, iconKey: String) {
         launchMutation(successMessage = "分类已添加") { userId ->
             categoryRepository.createCategory(
                 userId = userId,
                 type = selectedType.value,
                 rawName = name,
+                iconKey = iconKey,
             )
         }
     }
 
-    fun updateCategory(categoryId: Long, name: String) {
+    fun updateCategory(categoryId: Long, name: String, iconKey: String) {
         launchMutation(successMessage = "分类已更新") { userId ->
             categoryRepository.updateCategory(
                 userId = userId,
                 categoryId = categoryId,
                 rawName = name,
+                iconKey = iconKey,
             )
         }
     }

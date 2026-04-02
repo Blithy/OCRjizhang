@@ -44,9 +44,10 @@ class CategoryRepository @Inject constructor(
         }
     }
 
-    suspend fun createCategory(userId: Long, type: RecordType, rawName: String) {
+    suspend fun createCategory(userId: Long, type: RecordType, rawName: String, iconKey: String) {
         val name = rawName.trim()
         validateName(userId, type, name, excludedId = -1L)
+        val resolvedIconKey = CategoryDefaults.iconKeyFor(name, type, iconKey)
 
         val now = System.currentTimeMillis()
         val category = CategoryEntity(
@@ -54,7 +55,7 @@ class CategoryRepository @Inject constructor(
             userId = userId,
             name = name,
             type = type,
-            icon = null,
+            icon = resolvedIconKey,
             color = null,
             isDefault = false,
             createdAt = now,
@@ -68,7 +69,7 @@ class CategoryRepository @Inject constructor(
         }
     }
 
-    suspend fun updateCategory(userId: Long, categoryId: Long, rawName: String) {
+    suspend fun updateCategory(userId: Long, categoryId: Long, rawName: String, iconKey: String) {
         val category = getOwnedCategory(userId, categoryId)
         if (category.isDefault) {
             error("默认分类暂不支持编辑")
@@ -76,10 +77,12 @@ class CategoryRepository @Inject constructor(
 
         val name = rawName.trim()
         validateName(userId, category.type, name, excludedId = category.id)
+        val resolvedIconKey = CategoryDefaults.iconKeyFor(name, category.type, iconKey)
 
         val now = System.currentTimeMillis()
         val updated = category.copy(
             name = name,
+            icon = resolvedIconKey,
             updatedAt = now,
             syncStatus = if (category.syncStatus == SyncStatus.PENDING_CREATE) {
                 SyncStatus.PENDING_CREATE
