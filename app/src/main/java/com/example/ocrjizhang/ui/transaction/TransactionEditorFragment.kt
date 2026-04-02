@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -58,6 +59,10 @@ class TransactionEditorFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+            animateCloseAndPop()
+        }
+
         binding.categoryGrid.layoutManager = GridLayoutManager(requireContext(), 5)
         binding.categoryGrid.adapter = categoryAdapter
         binding.sheetScrim.alpha = 0f
@@ -76,6 +81,9 @@ class TransactionEditorFragment : Fragment() {
             }
         }
         bindDragToDismiss()
+        binding.sheetScrim.setOnClickListener {
+            animateCloseAndPop()
+        }
 
         binding.cancelButton.setOnClickListener {
             animateCloseAndPop()

@@ -12,13 +12,22 @@
         android:orientation="vertical"
         android:padding="20dp">
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/ledgerSwitcher"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:text="@string/home_ledger_switcher" />
+
         <TextView
             android:id="@+id/welcomeTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/ink_primary"
             android:textSize="28sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/welcomeSubtitle"
@@ -28,12 +37,13 @@
             android:lineSpacingExtra="2dp"
             android:text="@string/home_welcome_subtitle"
             android:textColor="@color/ink_secondary"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:visibility="gone" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="8dp"
             app:cardBackgroundColor="@color/surface_container"
             app:cardCornerRadius="28dp"
             app:cardElevation="0dp"

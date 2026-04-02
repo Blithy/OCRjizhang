@@ -30,6 +30,8 @@
     <string name="home_recent_subtitle">这里会显示你最近保存的几笔收入和支出。</string>
     <string name="home_recent_empty_title">最近还没有记账记录</string>
     <string name="home_recent_empty_body">先新增一笔收入或支出，首页就会开始显示真实摘要。</string>
+    <string name="home_ledger_switcher">账本</string>
+    <string name="home_ledger_switcher_message">当前演示版先使用单账本，后续这里可以扩展为账本切换入口。</string>
     <string name="home_status_account_label">当前账号</string>
     <string name="home_status_records_label">本地记录</string>
     <string name="home_status_latest_label">最近记账</string>

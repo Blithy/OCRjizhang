@@ -51,6 +51,9 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.recentTransactionList.adapter = recentAdapter
+        binding.ledgerSwitcher.setOnClickListener {
+            Snackbar.make(binding.root, R.string.home_ledger_switcher_message, Snackbar.LENGTH_SHORT).show()
+        }
         binding.ocrCard.setOnClickListener(::openOcr)
         binding.ocrStartButton.setOnClickListener(::openOcr)
 
