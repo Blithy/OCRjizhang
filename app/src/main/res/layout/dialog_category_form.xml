@@ -16,7 +16,6 @@
             android:id="@+id/categoryNameEdit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/hint_category_name"
             android:imeOptions="actionDone"
             android:inputType="textCapWords"
             android:maxLines="1" />

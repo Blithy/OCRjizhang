@@ -130,7 +130,6 @@
                         android:id="@+id/amountEdit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/hint_amount"
                         android:inputType="numberDecimal" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -146,7 +145,6 @@
                         android:id="@+id/categoryDropdown"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/hint_transaction_category"
                         android:inputType="none" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -209,7 +207,6 @@
                         android:id="@+id/merchantEdit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/hint_transaction_merchant"
                         android:inputType="textCapWords" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -224,7 +221,6 @@
                         android:id="@+id/remarkEdit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="@string/hint_transaction_remark"
                         android:inputType="textMultiLine"
                         android:maxLines="3" />
                 </com.google.android.material.textfield.TextInputLayout>
