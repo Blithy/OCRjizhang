@@ -4,6 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="@color/surface_base"
     app:cardCornerRadius="18dp"
     app:cardElevation="0dp"
@@ -111,6 +114,14 @@
                     android:textColor="@color/negative" />
             </LinearLayout>
         </LinearLayout>
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="8dp"
+            android:contentDescription="@string/assets_account_click_hint"
+            android:src="@drawable/ic_chevron_right_20"
+            app:tint="@color/ink_secondary" />
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

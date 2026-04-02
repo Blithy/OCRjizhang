@@ -56,8 +56,8 @@ class AssetViewModel @Inject constructor(
                 isLoading = false,
                 totalAssetLabel = AccountingFormatters.formatFen(totalAssets),
                 accountCountLabel = "${accounts.size} 个账户",
-                statusLabel = if (accounts.isEmpty()) "等待添加账户" else "本地账户已就绪",
-                defaultAccountsLabel = "默认账户：${AccountDefaults.defaultAccountNames().joinToString(" / ")}",
+                statusLabel = buildStatusLabel(accounts),
+                defaultAccountsLabel = "已预设 ${AccountDefaults.defaultAccountNames().size} 个常用账户",
                 accounts = accounts.map(::toAccountItem),
                 emptyTitle = if (userId == null) "当前没有可用会话" else "还没有资金账户",
                 emptyBody = if (userId == null) {
@@ -139,12 +139,29 @@ class AssetViewModel @Inject constructor(
         AccountingFormatters.parseToFen(rawInput)
             ?: error("请输入正确余额，最多保留两位小数")
 
+    private fun buildStatusLabel(accounts: List<AccountEntity>): String {
+        if (accounts.isEmpty()) return "等待首次添加"
+
+        val latestUpdatedAt = accounts.maxOf { it.updatedAt }
+        val diffMillis = System.currentTimeMillis() - latestUpdatedAt
+        val minuteMillis = 60_000L
+        val hourMillis = 60 * minuteMillis
+        val dayMillis = 24 * hourMillis
+
+        return when {
+            diffMillis < 10 * minuteMillis -> "刚刚更新"
+            diffMillis < hourMillis -> "${(diffMillis / minuteMillis).coerceAtLeast(1)} 分钟前"
+            diffMillis < dayMillis -> "${(diffMillis / hourMillis).coerceAtLeast(1)} 小时前"
+            else -> AccountingFormatters.formatDate(latestUpdatedAt)
+        }
+    }
+
     private fun toAccountItem(account: AccountEntity): AssetAccountItem =
         AssetAccountItem(
             id = account.id,
             name = account.name,
             symbol = account.symbol,
-            detail = if (account.isDefault) "默认账户 · 首次演示会自动准备" else "自定义资金账户",
+            detail = if (account.isDefault) "点按卡片可直接编辑余额" else "点按卡片可编辑名称和余额",
             balanceLabel = AccountingFormatters.formatFen(account.balanceFen),
             isDefault = account.isDefault,
         )

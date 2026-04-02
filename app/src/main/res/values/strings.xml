@@ -65,11 +65,11 @@
     <string name="assets_total_hint">当前先按账户余额汇总总资产，后续可继续接入和交易联动的自动增减。</string>
     <string name="assets_summary_accounts">账户数量</string>
     <string name="assets_summary_accounts_placeholder">0 个账户</string>
-    <string name="assets_summary_status">当前状态</string>
-    <string name="assets_summary_status_placeholder">等待账户数据</string>
+    <string name="assets_summary_status">最近变动</string>
+    <string name="assets_summary_status_placeholder">等待首次添加</string>
     <string name="assets_accounts_title">资金账户</string>
-    <string name="assets_accounts_subtitle">默认会准备现金、微信、支付宝、银行卡，你也可以继续添加自己的钱包或账户。</string>
-    <string name="assets_default_accounts_hint">默认账户：现金 / 微信 / 支付宝 / 银行卡</string>
+    <string name="assets_accounts_subtitle">把常用的钱包、支付工具和银行卡都放在这里统一管理。</string>
+    <string name="assets_default_accounts_hint">已预设 4 个常用账户</string>
     <string name="assets_accounts_placeholder_title">还没有资金账户</string>
     <string name="assets_accounts_placeholder_body">先新增一个账户，或者保留默认账户后直接修改余额，就能开始展示真实资产。</string>
     <string name="assets_action_add_account">新增账户</string>
@@ -78,6 +78,7 @@
     <string name="assets_dialog_hint">给账户起一个清楚的名字，再填入当前余额，资产页会立刻更新总资产。</string>
     <string name="assets_delete_title">删除账户</string>
     <string name="assets_delete_message">确定删除“%1$s”吗？删除后会立即从资产列表中移除。</string>
+    <string name="assets_account_click_hint">点击进入账户编辑</string>
     <string name="label_account_name">账户名称</string>
     <string name="hint_account_name">例如 钱包、招商银行卡</string>
     <string name="label_account_balance">当前余额</string>
