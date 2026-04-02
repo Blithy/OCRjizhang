@@ -31,8 +31,8 @@ private fun currentMonthLabel(): String =
         .format(DateTimeFormatter.ofPattern("yyyy年M月", Locale.CHINA))
 
 data class HomeUiState(
-    val welcomeTitle: String = "欢迎回来",
-    val welcomeSubtitle: String = "先看本月收支，再决定是手动记一笔，还是从票据截图快速带入。",
+    val welcomeTitle: String = "",
+    val welcomeSubtitle: String = "",
     val summaryPeriodLabel: String = currentMonthLabel(),
     val incomeLabel: String = "收入 ¥0.00",
     val expenseLabel: String = "支出 ¥0.00",
@@ -73,17 +73,10 @@ class HomeViewModel @Inject constructor(
             } else {
                 transactionRepository.observeTransactions(userId).map { transactions ->
                     val monthlySummary = TransactionSummaryCalculator.calculateMonthlySummary(transactions)
-                    val displayName = snapshot.nickname.ifBlank {
-                        snapshot.username.ifBlank { "记账用户" }
-                    }
                     val latestRecord = transactions.firstOrNull()
                     HomeUiState(
-                        welcomeTitle = "${displayName}，先看一下这个月",
-                        welcomeSubtitle = if (transactions.isEmpty()) {
-                            "账本首页已经整理好，点击右下角就可以开始记第一笔。"
-                        } else {
-                            "最近的收支摘要和票据识别入口都已经放到首页，适合直接演示。"
-                        },
+                        welcomeTitle = "",
+                        welcomeSubtitle = "",
                         summaryPeriodLabel = currentMonthLabel(),
                         incomeLabel = "收入 ${AccountingFormatters.formatFen(monthlySummary.incomeFen)}",
                         expenseLabel = "支出 ${AccountingFormatters.formatFen(monthlySummary.expenseFen)}",

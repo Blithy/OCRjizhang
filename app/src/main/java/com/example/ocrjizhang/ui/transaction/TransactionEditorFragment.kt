@@ -3,6 +3,7 @@ package com.example.ocrjizhang.ui.transaction
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -34,6 +35,10 @@ class TransactionEditorFragment : Fragment() {
     private val viewModel: TransactionViewModel by viewModels()
     private val args: TransactionEditorFragmentArgs by navArgs()
     private var latestState = TransactionUiState()
+    private var hasAnimatedIn = false
+    private var isClosing = false
+    private var dragStartY = 0f
+    private var dragStartTranslationY = 0f
 
     private val categoryAdapter by lazy {
         QuickCategoryAdapter { option ->
@@ -55,9 +60,25 @@ class TransactionEditorFragment : Fragment() {
 
         binding.categoryGrid.layoutManager = GridLayoutManager(requireContext(), 5)
         binding.categoryGrid.adapter = categoryAdapter
+        binding.sheetScrim.alpha = 0f
+        binding.sheetCard.post {
+            if (!hasAnimatedIn) {
+                hasAnimatedIn = true
+                binding.sheetCard.translationY = binding.sheetCard.height.toFloat()
+                binding.sheetScrim.animate()
+                    .alpha(1f)
+                    .setDuration(220L)
+                    .start()
+                binding.sheetCard.animate()
+                    .translationY(0f)
+                    .setDuration(280L)
+                    .start()
+            }
+        }
+        bindDragToDismiss()
 
         binding.cancelButton.setOnClickListener {
-            findNavController().popBackStack()
+            animateCloseAndPop()
         }
         binding.expenseButton.setOnClickListener { viewModel.onTypeSelected(RecordType.EXPENSE) }
         binding.incomeButton.setOnClickListener { viewModel.onTypeSelected(RecordType.INCOME) }
@@ -121,7 +142,7 @@ class TransactionEditorFragment : Fragment() {
                             }
 
                             TransactionEvent.SavedAndClose -> {
-                                findNavController().popBackStack()
+                                animateCloseAndPop()
                             }
                         }
                     }
@@ -161,6 +182,46 @@ class TransactionEditorFragment : Fragment() {
         )
 
         categoryAdapter.submitList(state.categories)
+    }
+
+    private fun bindDragToDismiss() {
+        val dragListener = View.OnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    dragStartY = event.rawY
+                    dragStartTranslationY = binding.sheetCard.translationY
+                    true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    val delta = (event.rawY - dragStartY).coerceAtLeast(0f)
+                    binding.sheetCard.translationY = dragStartTranslationY + delta
+                    binding.sheetScrim.alpha = (1f - (binding.sheetCard.translationY / binding.sheetCard.height)).coerceIn(0.35f, 1f)
+                    true
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+                    if (binding.sheetCard.translationY > binding.sheetCard.height * 0.18f) {
+                        animateCloseAndPop()
+                    } else {
+                        binding.sheetCard.animate()
+                            .translationY(0f)
+                            .setDuration(180L)
+                            .start()
+                        binding.sheetScrim.animate()
+                            .alpha(1f)
+                            .setDuration(180L)
+                            .start()
+                    }
+                    true
+                }
+
+                else -> false
+            }
+        }
+        binding.dragHandleArea.setOnTouchListener(dragListener)
+        binding.sheetHeader.setOnTouchListener(dragListener)
     }
 
     private fun bindKeypad() {
@@ -241,6 +302,24 @@ class TransactionEditorFragment : Fragment() {
                 viewModel.onRemarkChanged(remarkEdit.text?.toString().orEmpty())
             }
             .show()
+    }
+
+    private fun animateCloseAndPop() {
+        if (isClosing) return
+        isClosing = true
+        binding.sheetScrim.animate()
+            .alpha(0f)
+            .setDuration(180L)
+            .start()
+        binding.sheetCard.animate()
+            .translationY(binding.sheetCard.height.toFloat())
+            .setDuration(220L)
+            .withEndAction {
+                if (isAdded) {
+                    findNavController().popBackStack()
+                }
+            }
+            .start()
     }
 
     override fun onDestroyView() {

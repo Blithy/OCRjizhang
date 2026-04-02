@@ -23,10 +23,10 @@
     <action
         android:id="@+id/action_global_transactionEditorFragment"
         app:destination="@id/transactionEditorFragment"
-        app:enterAnim="@anim/nav_enter_forward"
-        app:exitAnim="@anim/nav_exit_forward"
-        app:popEnterAnim="@anim/nav_enter_back"
-        app:popExitAnim="@anim/nav_exit_back" />
+        app:enterAnim="@anim/nav_fade_in"
+        app:exitAnim="@anim/nav_fade_out"
+        app:popEnterAnim="@anim/nav_fade_in"
+        app:popExitAnim="@anim/nav_fade_out" />
 
     <fragment
         android:id="@+id/splashFragment"
@@ -66,10 +66,10 @@
         <action
             android:id="@+id/action_homeFragment_to_transactionEditorFragment"
             app:destination="@id/transactionEditorFragment"
-            app:enterAnim="@anim/nav_enter_forward"
-            app:exitAnim="@anim/nav_exit_forward"
-            app:popEnterAnim="@anim/nav_enter_back"
-            app:popExitAnim="@anim/nav_exit_back" />
+            app:enterAnim="@anim/nav_fade_in"
+            app:exitAnim="@anim/nav_fade_out"
+            app:popEnterAnim="@anim/nav_fade_in"
+            app:popExitAnim="@anim/nav_fade_out" />
         <action
             android:id="@+id/action_homeFragment_to_categoryFragment"
             app:destination="@id/categoryFragment"
@@ -153,9 +153,9 @@
         <action
             android:id="@+id/action_ocrFragment_to_transactionEditorFragment"
             app:destination="@id/transactionEditorFragment"
-            app:enterAnim="@anim/nav_enter_forward"
-            app:exitAnim="@anim/nav_exit_forward"
-            app:popEnterAnim="@anim/nav_enter_back"
-            app:popExitAnim="@anim/nav_exit_back" />
+            app:enterAnim="@anim/nav_fade_in"
+            app:exitAnim="@anim/nav_fade_out"
+            app:popEnterAnim="@anim/nav_fade_in"
+            app:popExitAnim="@anim/nav_fade_out" />
     </fragment>
 </navigation>

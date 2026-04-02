@@ -60,6 +60,8 @@ class HomeFragment : Fragment() {
                     viewModel.uiState.collect { state ->
                         binding.welcomeTitle.text = state.welcomeTitle
                         binding.welcomeSubtitle.text = state.welcomeSubtitle
+                        binding.welcomeTitle.isVisible = state.welcomeTitle.isNotBlank()
+                        binding.welcomeSubtitle.isVisible = state.welcomeSubtitle.isNotBlank()
                         binding.summaryPeriodLabel.text = state.summaryPeriodLabel
                         binding.incomeValue.text = state.incomeLabel
                         binding.expenseValue.text = state.expenseLabel

@@ -125,7 +125,7 @@ class TransactionViewModel @Inject constructor(
                 "更新完成"
             },
             secondaryLabel = if (editingId == null) {
-                "保存再记"
+                "再记一笔"
             } else {
                 "更新后继续"
             },

@@ -51,6 +51,8 @@
         android:contentDescription="@string/home_fab_add_record"
         android:src="@drawable/ic_add_record_24"
         app:backgroundTint="@color/secondary_brand"
+        app:fabCustomSize="66dp"
+        app:maxImageSize="28dp"
         app:rippleColor="@color/surface_tint_soft"
         app:tint="@color/primary_brand_dark" />
 
