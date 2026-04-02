@@ -160,6 +160,7 @@
     <string name="transaction_action_manage_categories">管理分类</string>
     <string name="transaction_action_ocr">票据识别</string>
     <string name="transaction_detail_placeholder">点击填写备注</string>
+    <string name="transaction_account_title">资金账户</string>
     <string name="transaction_account_placeholder">选择资金账户</string>
     <string name="transaction_account_dialog_title">选择资金账户</string>
     <string name="transaction_account_empty">还没有可用账户</string>

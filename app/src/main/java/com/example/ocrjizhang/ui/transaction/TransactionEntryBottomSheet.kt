@@ -92,7 +92,7 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
             showDatePicker(viewModel.uiState.value.dateMillis)
         }
         binding.detailButton.setOnClickListener { showDetailDialog() }
-        binding.accountButton.setOnClickListener { showAccountPicker() }
+        binding.accountCard.setOnClickListener { showAccountPicker() }
         binding.manageCategoryButton.setOnClickListener {
             rootNavController().navigate(R.id.categoryFragment)
             dismiss()
@@ -159,7 +159,7 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
         binding.secondaryButton.text = state.secondaryLabel
         binding.dateButton.text = state.dateLabel
         binding.detailButton.text = state.detailLabel
-        binding.accountButton.text = state.accountLabel
+        binding.accountValue.text = state.accountLabel
         binding.amountValue.text = state.amountDisplay
         binding.amountValue.setTextColor(
             ContextCompat.getColor(
