@@ -65,7 +65,7 @@ class StatisticsViewModel @Inject constructor(
         StatisticsUiState(
             isLoading = false,
             selectedPeriod = period,
-            rangeLabel = range.label,
+            rangeLabel = "当前统计周期：${range.label}",
             incomeLabel = "\u6536\u5165 ${AccountingFormatters.formatFen(summary.incomeFen)}",
             expenseLabel = "\u652f\u51fa ${AccountingFormatters.formatFen(summary.expenseFen)}",
             surplusLabel = "\u7ed3\u4f59 ${AccountingFormatters.formatFen(summary.surplusFen)}",

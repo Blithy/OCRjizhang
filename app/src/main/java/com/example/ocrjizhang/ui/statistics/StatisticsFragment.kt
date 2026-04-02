@@ -174,7 +174,11 @@ class StatisticsFragment : Fragment() {
             valueTextSize = 12f
         }
         binding.categoryChart.apply {
-            centerText = getString(R.string.statistics_category_center)
+            centerText = when (state.selectedPeriod) {
+                StatisticsPeriod.DAY -> "今日支出"
+                StatisticsPeriod.WEEK -> "本周支出"
+                StatisticsPeriod.MONTH -> "本月支出"
+            }
             data = PieData(dataSet)
             invalidate()
         }

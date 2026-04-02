@@ -70,7 +70,8 @@ class OcrViewModel @Inject constructor(
             isProcessing = processing,
             isImagePreparing = preparingImage,
             selectedImagePath = imagePath,
-            selectedImageHint = selectedFileName?.let { "已选择图片：$it" } ?: "先从相册选择一张票据图片",
+            selectedImageHint = selectedFileName?.let { "已选择图片：$it，点击“开始识别”后即可提取金额、日期和商户。" }
+                ?: "先拍照或从相册选择一张票据图片，再开始识别。",
             parsedAmount = result?.parsedData?.amountText ?: "未识别",
             parsedDate = result?.parsedData?.dateText ?: "未识别",
             parsedMerchant = result?.parsedData?.merchantName ?: "未识别",
@@ -122,6 +123,8 @@ class OcrViewModel @Inject constructor(
                 currentResult.value = result
                 if (result.rawText.isBlank()) {
                     emitMessage("未识别到清晰文字，请换一张更清晰的票据")
+                } else {
+                    emitMessage("识别完成，先核对金额、日期和商户，再带入记账表单。")
                 }
             }.onFailure { throwable ->
                 emitMessage(throwable.message ?: "OCR 识别失败，请稍后重试")
