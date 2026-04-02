@@ -50,7 +50,8 @@
         android:layout_marginBottom="88dp"
         android:contentDescription="@string/home_fab_add_record"
         android:src="@drawable/ic_add_record_24"
-        app:backgroundTint="@color/primary_brand"
-        app:tint="@android:color/white" />
+        app:backgroundTint="@color/secondary_brand"
+        app:rippleColor="@color/surface_tint_soft"
+        app:tint="@color/primary_brand_dark" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
