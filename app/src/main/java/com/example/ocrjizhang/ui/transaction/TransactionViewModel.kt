@@ -6,6 +6,7 @@ import com.example.ocrjizhang.data.local.entity.AccountEntity
 import com.example.ocrjizhang.data.local.entity.CategoryEntity
 import com.example.ocrjizhang.data.local.entity.RecordType
 import com.example.ocrjizhang.data.repository.AccountRepository
+import com.example.ocrjizhang.data.repository.CategoryDefaults
 import com.example.ocrjizhang.data.local.entity.TransactionEntity
 import com.example.ocrjizhang.data.repository.CategoryRepository
 import com.example.ocrjizhang.data.repository.SessionManager
@@ -140,7 +141,11 @@ class TransactionViewModel @Inject constructor(
                 CategoryOption(
                     id = category.id,
                     name = category.name,
-                    symbol = category.name.take(1),
+                    iconKey = CategoryDefaults.iconKeyFor(
+                        name = category.name,
+                        type = category.type,
+                        storedKey = category.icon,
+                    ),
                     isSelected = category.id == effectiveCategoryId,
                 )
             },

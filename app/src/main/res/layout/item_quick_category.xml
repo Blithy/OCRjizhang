@@ -27,14 +27,13 @@
             app:cardCornerRadius="16dp"
             app:cardElevation="0dp">
 
-            <TextView
-                android:id="@+id/symbolView"
+            <ImageView
+                android:id="@+id/iconView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:gravity="center"
-                android:textColor="@color/primary_brand_dark"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:contentDescription="@null"
+                android:padding="7dp"
+                app:tint="@color/primary_brand_dark" />
         </com.google.android.material.card.MaterialCardView>
 
         <TextView

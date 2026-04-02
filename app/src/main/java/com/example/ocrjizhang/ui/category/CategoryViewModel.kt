@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ocrjizhang.data.local.entity.CategoryEntity
 import com.example.ocrjizhang.data.local.entity.RecordType
+import com.example.ocrjizhang.data.repository.CategoryDefaults
 import com.example.ocrjizhang.data.repository.CategoryRepository
 import com.example.ocrjizhang.data.repository.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -157,6 +158,11 @@ class CategoryViewModel @Inject constructor(
         CategoryListItem(
             id = category.id,
             name = category.name,
+            iconKey = CategoryDefaults.iconKeyFor(
+                name = category.name,
+                type = category.type,
+                storedKey = category.icon,
+            ),
             detail = if (category.isDefault) "系统默认分类" else "自定义分类",
             isDefault = category.isDefault,
             canEdit = !category.isDefault,

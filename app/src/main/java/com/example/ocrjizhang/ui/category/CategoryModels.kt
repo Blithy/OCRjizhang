@@ -5,6 +5,7 @@ import com.example.ocrjizhang.data.local.entity.RecordType
 data class CategoryListItem(
     val id: Long,
     val name: String,
+    val iconKey: String,
     val detail: String,
     val isDefault: Boolean,
     val canEdit: Boolean,

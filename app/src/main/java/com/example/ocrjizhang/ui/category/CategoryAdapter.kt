@@ -2,10 +2,12 @@ package com.example.ocrjizhang.ui.category
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.ItemCategoryBinding
 
 class CategoryAdapter(
@@ -33,11 +35,18 @@ class CategoryAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: CategoryListItem) {
+            binding.iconView.setImageResource(CategoryIconRegistry.iconResFor(item.iconKey))
             binding.nameView.text = item.name
             binding.detailView.text = item.detail
             binding.defaultBadge.isVisible = item.isDefault
             binding.editButton.isVisible = item.canEdit
             binding.deleteButton.isVisible = item.canDelete
+            binding.iconCard.setCardBackgroundColor(
+                ContextCompat.getColor(binding.root.context, R.color.surface_tint_soft),
+            )
+            binding.iconView.setColorFilter(
+                ContextCompat.getColor(binding.root.context, R.color.primary_brand_dark),
+            )
 
             binding.editButton.setOnClickListener { onEdit(item) }
             binding.deleteButton.setOnClickListener { onDelete(item) }

@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.ItemQuickCategoryBinding
+import com.example.ocrjizhang.ui.category.CategoryIconRegistry
 
 class QuickCategoryAdapter(
     private val onSelect: (CategoryOption) -> Unit,
@@ -32,8 +33,8 @@ class QuickCategoryAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: CategoryOption) {
-            binding.symbolView.text = item.symbol
             binding.nameView.text = item.name
+            binding.iconView.setImageResource(CategoryIconRegistry.iconResFor(item.iconKey))
 
             val context = binding.root.context
             val isSelected = item.isSelected
@@ -52,7 +53,7 @@ class QuickCategoryAdapter(
             } else {
                 R.color.surface_base
             }
-            val symbolTextColor = if (isSelected) {
+            val iconTintColor = if (isSelected) {
                 android.R.color.white
             } else {
                 R.color.primary_brand_dark
@@ -66,7 +67,7 @@ class QuickCategoryAdapter(
             binding.root.setCardBackgroundColor(ContextCompat.getColor(context, cardColor))
             binding.root.strokeColor = ContextCompat.getColor(context, strokeColor)
             binding.symbolCard.setCardBackgroundColor(ContextCompat.getColor(context, symbolBackground))
-            binding.symbolView.setTextColor(ContextCompat.getColor(context, symbolTextColor))
+            binding.iconView.setColorFilter(ContextCompat.getColor(context, iconTintColor))
             binding.nameView.setTextColor(ContextCompat.getColor(context, nameTextColor))
 
             binding.root.setOnClickListener {

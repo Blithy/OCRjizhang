@@ -5,7 +5,7 @@ import com.example.ocrjizhang.data.local.entity.RecordType
 data class CategoryOption(
     val id: Long,
     val name: String,
-    val symbol: String,
+    val iconKey: String,
     val isSelected: Boolean,
 )
 
