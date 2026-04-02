@@ -1,6 +1,8 @@
 package com.example.ocrjizhang
 
 import android.os.Bundle
+import android.view.View
+import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
@@ -15,6 +17,12 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private val motionIn by lazy {
+        AnimationUtils.loadInterpolator(this, android.R.interpolator.fast_out_slow_in)
+    }
+    private val motionOut by lazy {
+        AnimationUtils.loadInterpolator(this, android.R.interpolator.fast_out_linear_in)
+    }
 
     private val topLevelDestinations = setOf(
         R.id.homeFragment,
@@ -45,8 +53,18 @@ class MainActivity : AppCompatActivity() {
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val showBottomNav = destination.id in topLevelDestinations
-            binding.bottomNav.isVisible = showBottomNav
-            binding.topAppBar.isVisible = destination.id !in toolbarHiddenDestinations
+            val showToolbar = destination.id !in toolbarHiddenDestinations
+
+            updateChromeVisibility(
+                view = binding.bottomNav,
+                visible = showBottomNav,
+                hiddenTranslationY = resources.displayMetrics.density * 24f,
+            )
+            updateChromeVisibility(
+                view = binding.topAppBar,
+                visible = showToolbar,
+                hiddenTranslationY = -resources.displayMetrics.density * 16f,
+            )
             binding.navHostFragment.updateLayoutParams<CoordinatorLayout.LayoutParams> {
                 bottomMargin = if (showBottomNav) {
                     resources.getDimensionPixelSize(R.dimen.bottom_nav_space)
@@ -55,6 +73,38 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             binding.topAppBar.title = destination.label ?: getString(R.string.app_name)
+        }
+    }
+
+    private fun updateChromeVisibility(
+        view: View,
+        visible: Boolean,
+        hiddenTranslationY: Float,
+    ) {
+        view.animate().cancel()
+
+        if (visible) {
+            if (!view.isVisible) {
+                view.alpha = 0f
+                view.translationY = hiddenTranslationY
+                view.isVisible = true
+            }
+            view.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(220L)
+                .setInterpolator(motionIn)
+                .start()
+        } else if (view.isVisible) {
+            view.animate()
+                .alpha(0f)
+                .translationY(hiddenTranslationY)
+                .setDuration(180L)
+                .setInterpolator(motionOut)
+                .withEndAction {
+                    view.isVisible = false
+                }
+                .start()
         }
     }
 }

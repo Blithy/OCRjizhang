@@ -6,11 +6,19 @@
 
     <action
         android:id="@+id/action_global_homeFragment"
-        app:destination="@id/homeFragment" />
+        app:destination="@id/homeFragment"
+        app:enterAnim="@anim/nav_fade_in"
+        app:exitAnim="@anim/nav_fade_out"
+        app:popEnterAnim="@anim/nav_fade_in"
+        app:popExitAnim="@anim/nav_fade_out" />
 
     <action
         android:id="@+id/action_global_loginFragment"
-        app:destination="@id/loginFragment" />
+        app:destination="@id/loginFragment"
+        app:enterAnim="@anim/nav_fade_in"
+        app:exitAnim="@anim/nav_fade_out"
+        app:popEnterAnim="@anim/nav_fade_in"
+        app:popExitAnim="@anim/nav_fade_out" />
 
     <fragment
         android:id="@+id/splashFragment"
@@ -18,7 +26,11 @@
         android:label="@string/page_splash">
         <action
             android:id="@+id/action_splashFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
+            app:destination="@id/loginFragment"
+            app:enterAnim="@anim/nav_fade_in"
+            app:exitAnim="@anim/nav_fade_out"
+            app:popEnterAnim="@anim/nav_fade_in"
+            app:popExitAnim="@anim/nav_fade_out" />
     </fragment>
 
     <fragment
@@ -27,7 +39,11 @@
         android:label="@string/page_login">
         <action
             android:id="@+id/action_loginFragment_to_registerFragment"
-            app:destination="@id/registerFragment" />
+            app:destination="@id/registerFragment"
+            app:enterAnim="@anim/nav_enter_forward"
+            app:exitAnim="@anim/nav_exit_forward"
+            app:popEnterAnim="@anim/nav_enter_back"
+            app:popExitAnim="@anim/nav_exit_back" />
     </fragment>
 
     <fragment
@@ -41,13 +57,25 @@
         android:label="@string/page_home">
         <action
             android:id="@+id/action_homeFragment_to_transactionEditorFragment"
-            app:destination="@id/transactionEditorFragment" />
+            app:destination="@id/transactionEditorFragment"
+            app:enterAnim="@anim/nav_enter_forward"
+            app:exitAnim="@anim/nav_exit_forward"
+            app:popEnterAnim="@anim/nav_enter_back"
+            app:popExitAnim="@anim/nav_exit_back" />
         <action
             android:id="@+id/action_homeFragment_to_categoryFragment"
-            app:destination="@id/categoryFragment" />
+            app:destination="@id/categoryFragment"
+            app:enterAnim="@anim/nav_enter_forward"
+            app:exitAnim="@anim/nav_exit_forward"
+            app:popEnterAnim="@anim/nav_enter_back"
+            app:popExitAnim="@anim/nav_exit_back" />
         <action
             android:id="@+id/action_homeFragment_to_ocrFragment"
-            app:destination="@id/ocrFragment" />
+            app:destination="@id/ocrFragment"
+            app:enterAnim="@anim/nav_enter_forward"
+            app:exitAnim="@anim/nav_exit_forward"
+            app:popEnterAnim="@anim/nav_enter_back"
+            app:popExitAnim="@anim/nav_exit_back" />
     </fragment>
 
     <fragment
@@ -66,7 +94,11 @@
         android:label="@string/page_transaction_editor">
         <action
             android:id="@+id/action_transactionEditorFragment_to_categoryFragment"
-            app:destination="@id/categoryFragment" />
+            app:destination="@id/categoryFragment"
+            app:enterAnim="@anim/nav_enter_forward"
+            app:exitAnim="@anim/nav_exit_forward"
+            app:popEnterAnim="@anim/nav_enter_back"
+            app:popExitAnim="@anim/nav_exit_back" />
         <argument
             android:name="prefillAmount"
             app:argType="string"
@@ -100,6 +132,10 @@
         android:label="@string/page_ocr">
         <action
             android:id="@+id/action_ocrFragment_to_transactionEditorFragment"
-            app:destination="@id/transactionEditorFragment" />
+            app:destination="@id/transactionEditorFragment"
+            app:enterAnim="@anim/nav_enter_forward"
+            app:exitAnim="@anim/nav_exit_forward"
+            app:popEnterAnim="@anim/nav_enter_back"
+            app:popExitAnim="@anim/nav_exit_back" />
     </fragment>
 </navigation>
