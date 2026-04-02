@@ -208,11 +208,14 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/addAccountButton"
-                        style="@style/Widget.Material3.Button.TextButton"
+                        style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:contentDescription="@string/assets_action_add_account"
                         android:minWidth="0dp"
-                        android:text="@string/assets_action_add_account" />
+                        android:text="@string/assets_action_add_account"
+                        app:icon="@drawable/ic_add_record_24"
+                        app:iconTint="@color/primary_brand_dark" />
                 </LinearLayout>
 
                 <FrameLayout

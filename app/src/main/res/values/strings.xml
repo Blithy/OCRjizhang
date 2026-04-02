@@ -75,6 +75,7 @@
     <string name="assets_action_add_account">新增账户</string>
     <string name="assets_dialog_add_account">新增资金账户</string>
     <string name="assets_dialog_edit_account">编辑资金账户</string>
+    <string name="assets_dialog_hint">给账户起一个清楚的名字，再填入当前余额，资产页会立刻更新总资产。</string>
     <string name="assets_delete_title">删除账户</string>
     <string name="assets_delete_message">确定删除“%1$s”吗？删除后会立即从资产列表中移除。</string>
     <string name="label_account_name">账户名称</string>
