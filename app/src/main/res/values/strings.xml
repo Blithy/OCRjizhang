@@ -7,6 +7,8 @@
     <string name="page_statistics">统计分析</string>
     <string name="page_profile">个人中心</string>
     <string name="page_transaction_editor">新增记账</string>
+    <string name="page_transaction_editor_edit">编辑记账</string>
+    <string name="page_transaction_editor_prefill">OCR 带入记账</string>
     <string name="page_category">分类管理</string>
     <string name="page_ocr">OCR 识别</string>
     <string name="page_login">登录</string>

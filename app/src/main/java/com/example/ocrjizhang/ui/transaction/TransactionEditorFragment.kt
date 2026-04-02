@@ -122,6 +122,12 @@ class TransactionEditorFragment : Fragment() {
     }
 
     private fun render(state: TransactionUiState) {
+        requireActivity().title = when {
+            state.isEditing -> getString(R.string.page_transaction_editor_edit)
+            state.showOcrPrefillHint -> getString(R.string.page_transaction_editor_prefill)
+            else -> getString(R.string.page_transaction_editor)
+        }
+
         binding.amountLayout.error = null
         binding.transactionList.isVisible = state.transactions.isNotEmpty()
         binding.emptyStateGroup.isVisible = state.transactions.isEmpty()
