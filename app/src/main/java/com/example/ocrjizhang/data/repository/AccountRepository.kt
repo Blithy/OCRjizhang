@@ -1,0 +1,88 @@
+package com.example.ocrjizhang.data.repository
+
+import com.example.ocrjizhang.data.local.dao.AccountDao
+import com.example.ocrjizhang.data.local.entity.AccountEntity
+import com.example.ocrjizhang.utils.LocalIdGenerator
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+
+@Singleton
+class AccountRepository @Inject constructor(
+    private val accountDao: AccountDao,
+) {
+
+    fun observeAccounts(userId: Long): Flow<List<AccountEntity>> =
+        accountDao.observeAccounts(userId)
+
+    suspend fun ensureDefaultAccounts(userId: Long) {
+        val missingDefaults = AccountDefaults.buildMissingDefaults(
+            userId = userId,
+            existingAccounts = accountDao.getAccounts(userId),
+        )
+        if (missingDefaults.isEmpty()) return
+        accountDao.upsertAll(missingDefaults)
+    }
+
+    suspend fun createAccount(userId: Long, rawName: String, balanceFen: Long) {
+        val name = rawName.trim()
+        validateName(userId, name, excludedId = -1L)
+        validateBalance(balanceFen)
+
+        val now = System.currentTimeMillis()
+        accountDao.upsert(
+            AccountEntity(
+                id = LocalIdGenerator.nextId(),
+                userId = userId,
+                name = name,
+                symbol = AccountDefaults.buildSymbol(name),
+                balanceFen = balanceFen,
+                isDefault = false,
+                createdAt = now,
+                updatedAt = now,
+            ),
+        )
+    }
+
+    suspend fun updateAccount(userId: Long, accountId: Long, rawName: String, balanceFen: Long) {
+        val existing = getOwnedAccount(userId, accountId)
+        val name = rawName.trim()
+        validateName(userId, name, excludedId = accountId)
+        validateBalance(balanceFen)
+
+        accountDao.upsert(
+            existing.copy(
+                name = name,
+                symbol = AccountDefaults.buildSymbol(name),
+                balanceFen = balanceFen,
+                updatedAt = System.currentTimeMillis(),
+            ),
+        )
+    }
+
+    suspend fun deleteAccount(userId: Long, accountId: Long) {
+        getOwnedAccount(userId, accountId)
+        accountDao.deleteById(accountId)
+    }
+
+    private suspend fun getOwnedAccount(userId: Long, accountId: Long): AccountEntity =
+        accountDao.getAccountById(accountId)
+            ?.takeIf { it.userId == userId }
+            ?: error("账户不存在或无权访问")
+
+    private suspend fun validateName(userId: Long, name: String, excludedId: Long) {
+        if (name.isBlank()) {
+            error("账户名称不能为空")
+        }
+        val duplicateCount = accountDao.countByName(userId, name, excludedId)
+        if (duplicateCount > 0) {
+            error("已存在同名账户")
+        }
+    }
+
+    private fun validateBalance(balanceFen: Long) {
+        if (balanceFen < 0L) {
+            error("账户余额不能为负数")
+        }
+    }
+}

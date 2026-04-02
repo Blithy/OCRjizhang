@@ -2,12 +2,14 @@ package com.example.ocrjizhang.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.ocrjizhang.data.local.dao.AccountDao
 import com.example.ocrjizhang.data.local.dao.CategoryDao
 import com.example.ocrjizhang.data.local.dao.OcrRecordDao
 import com.example.ocrjizhang.data.local.dao.SyncOperationDao
 import com.example.ocrjizhang.data.local.dao.TransactionDao
 import com.example.ocrjizhang.data.local.dao.UserDao
 import com.example.ocrjizhang.data.local.database.AppDatabase
+import com.example.ocrjizhang.data.local.database.DatabaseMigrations
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,10 +28,14 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "ocr_jizhang.db",
-        ).build()
+        ).addMigrations(DatabaseMigrations.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideUserDao(database: AppDatabase): UserDao = database.userDao()
+
+    @Provides
+    fun provideAccountDao(database: AppDatabase): AccountDao = database.accountDao()
 
     @Provides
     fun provideCategoryDao(database: AppDatabase): CategoryDao = database.categoryDao()
