@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val showBottomNav = destination.id in topLevelDestinations
             val showToolbar = destination.id !in toolbarHiddenDestinations
-            val showFab = destination.id in topLevelDestinations
+            val showFab = destination.id == R.id.homeFragment
 
             updateChromeVisibility(
                 view = binding.bottomNav,
