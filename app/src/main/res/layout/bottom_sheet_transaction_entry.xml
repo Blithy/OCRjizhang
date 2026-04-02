@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sheetCard"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginTop="28dp"
     app:cardBackgroundColor="@color/surface_container"
-    app:cardCornerRadius="32dp"
-    app:cardElevation="0dp">
+    app:cardElevation="0dp"
+    app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.OCRjizhang.SheetTopOnly">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -176,10 +177,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardBackgroundColor="@color/surface_base"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="0dp">
+            app:cardElevation="0dp"
+            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.OCRjizhang.PanelTopOnly">
 
             <LinearLayout
+                android:id="@+id/inputPanelContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
