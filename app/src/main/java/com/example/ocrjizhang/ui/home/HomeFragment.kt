@@ -51,9 +51,6 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.recentTransactionList.adapter = recentAdapter
-        binding.ledgerSwitcher.setOnClickListener {
-            Snackbar.make(binding.root, R.string.home_ledger_switcher_message, Snackbar.LENGTH_SHORT).show()
-        }
         binding.ocrCard.setOnClickListener(::openOcr)
         binding.ocrStartButton.setOnClickListener(::openOcr)
 
@@ -61,9 +58,7 @@ class HomeFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
-                        binding.welcomeTitle.text = state.welcomeTitle
                         binding.welcomeSubtitle.text = state.welcomeSubtitle
-                        binding.welcomeTitle.isVisible = state.welcomeTitle.isNotBlank()
                         binding.welcomeSubtitle.isVisible = state.welcomeSubtitle.isNotBlank()
                         binding.summaryPeriodLabel.text = state.summaryPeriodLabel
                         binding.incomeValue.text = state.incomeLabel
