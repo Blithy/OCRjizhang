@@ -51,10 +51,13 @@
     <string name="statistics_category_center">支出分类</string>
     <string name="statistics_income_legend">收入</string>
     <string name="statistics_expense_legend">支出</string>
+    <string name="profile_tools_title">常用管理</string>
+    <string name="profile_tools_subtitle">把高频操作集中在一个区域，演示时可以更快进入分类维护和数据同步。</string>
+    <string name="profile_manage_categories_action">分类管理</string>
+    <string name="profile_sync_action">立即同步</string>
+    <string name="profile_sync_action_loading">同步中...</string>
     <string name="profile_account_title">当前演示能力</string>
-    <string name="profile_account_subtitle">已经可以完成登录、分类管理、交易增删改查、OCR 识别带入、统计查看和本地演示同步。</string>
-    <string name="profile_sync_title">同步说明</string>
-    <string name="profile_sync_subtitle">点击立即同步后，会先上传本地分类和交易变更，再拉取当前云端快照回写到本地。</string>
+    <string name="profile_account_subtitle">登录、分类、交易、OCR、统计和本地同步都已接入，可按主流程直接演示。</string>
     <string name="profile_build_title">演示环境</string>
     <string name="profile_build_subtitle">minSdk 26 / targetSdk 34 / compileSdk 36 / Spring Boot 本地演示后端</string>
     <string name="profile_logout">退出登录</string>

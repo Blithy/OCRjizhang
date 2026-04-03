@@ -40,6 +40,10 @@ class ProfileFragment : Fragment() {
             viewModel.syncNow()
         }
 
+        binding.manageCategoryButton.setOnClickListener {
+            findNavController().navigate(R.id.action_profileFragment_to_categoryFragment)
+        }
+
         binding.logoutButton.setOnClickListener {
             viewModel.logout()
         }
@@ -49,6 +53,10 @@ class ProfileFragment : Fragment() {
                 launch {
                     viewModel.uiState.collect { state ->
                         binding.syncButton.isEnabled = !state.isSyncing
+                        binding.syncButton.text = getString(
+                            if (state.isSyncing) R.string.profile_sync_action_loading
+                            else R.string.profile_sync_action,
+                        )
                     }
                 }
 

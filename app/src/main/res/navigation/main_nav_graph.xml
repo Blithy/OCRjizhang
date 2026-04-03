@@ -99,7 +99,15 @@
     <fragment
         android:id="@+id/profileFragment"
         android:name="com.example.ocrjizhang.ui.profile.ProfileFragment"
-        android:label="@string/page_profile" />
+        android:label="@string/page_profile">
+        <action
+            android:id="@+id/action_profileFragment_to_categoryFragment"
+            app:destination="@id/categoryFragment"
+            app:enterAnim="@anim/nav_enter_forward"
+            app:exitAnim="@anim/nav_exit_forward"
+            app:popEnterAnim="@anim/nav_enter_back"
+            app:popExitAnim="@anim/nav_exit_back" />
+    </fragment>
 
     <fragment
         android:id="@+id/transactionEditorFragment"
