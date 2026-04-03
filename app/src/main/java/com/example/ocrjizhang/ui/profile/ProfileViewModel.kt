@@ -30,7 +30,6 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.observeCurrentUserProfile().collect { profile ->
                 _uiState.value = _uiState.value.copy(
-                    username = profile?.username.orEmpty(),
                     nickname = profile?.nickname.orEmpty(),
                     email = profile?.email.orEmpty(),
                     phone = profile?.phone.orEmpty(),

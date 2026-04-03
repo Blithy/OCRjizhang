@@ -39,7 +39,7 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.userManageCard.setOnClickListener {
+        binding.openUserManageButton.setOnClickListener {
             showUserManagementDialog(viewModel.uiState.value)
         }
 
@@ -51,7 +51,7 @@ class ProfileFragment : Fragment() {
             viewModel.syncNow()
         }
 
-        binding.logoutCard.setOnClickListener {
+        binding.logoutButton.setOnClickListener {
             viewModel.logout()
         }
 
@@ -59,13 +59,19 @@ class ProfileFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
-                        binding.userManageSubtitle.text = getString(
-                            R.string.profile_user_entry_subtitle,
-                            state.username.ifBlank { getString(R.string.profile_user_unknown) },
-                            state.nickname.ifBlank { getString(R.string.profile_user_unknown) },
+                        val nickname = state.nickname.ifBlank { getString(R.string.profile_header_nickname_placeholder) }
+                        binding.profileNicknameTitle.text = nickname
+                        binding.profileAvatarInitial.text = state.nickname
+                            .takeIf { it.isNotBlank() }
+                            ?.take(1)
+                            ?: getString(R.string.profile_avatar_default)
+                        binding.profileContactSubtitle.text = buildContactSubtitle(
+                            email = state.email,
+                            phone = state.phone,
                         )
-                        binding.userManageCard.isEnabled = !state.isUpdatingUser
-                        binding.userManageCard.alpha = if (state.isUpdatingUser) 0.65f else 1f
+
+                        binding.openUserManageButton.isEnabled = !state.isUpdatingUser
+                        binding.openUserManageButton.alpha = if (state.isUpdatingUser) 0.65f else 1f
 
                         binding.syncEntryCard.isEnabled = !state.isSyncing
                         binding.syncEntryCard.alpha = if (state.isSyncing) 0.65f else 1f
@@ -100,7 +106,6 @@ class ProfileFragment : Fragment() {
 
     private fun showUserManagementDialog(state: ProfileUiState) {
         val dialogBinding = DialogUserManagementFormBinding.inflate(layoutInflater)
-        dialogBinding.usernameEdit.setText(state.username)
         dialogBinding.nicknameEdit.setText(state.nickname)
         dialogBinding.emailEdit.setText(state.email)
         dialogBinding.phoneEdit.setText(state.phone)
@@ -133,6 +138,17 @@ class ProfileFragment : Fragment() {
         }
 
         dialog.show()
+    }
+
+    private fun buildContactSubtitle(email: String, phone: String): String {
+        val emailValue = email.ifBlank { null }
+        val phoneValue = phone.ifBlank { null }
+        return when {
+            emailValue != null && phoneValue != null -> "$emailValue  |  $phoneValue"
+            emailValue != null -> emailValue
+            phoneValue != null -> phoneValue
+            else -> getString(R.string.profile_header_contact_placeholder)
+        }
     }
 
     override fun onDestroyView() {

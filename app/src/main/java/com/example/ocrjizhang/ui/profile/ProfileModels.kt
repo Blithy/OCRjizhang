@@ -3,7 +3,6 @@ package com.example.ocrjizhang.ui.profile
 data class ProfileUiState(
     val isSyncing: Boolean = false,
     val isUpdatingUser: Boolean = false,
-    val username: String = "",
     val nickname: String = "",
     val email: String = "",
     val phone: String = "",
