@@ -121,6 +121,8 @@ class StatisticsCalculatorTest {
         userId = 1L,
         type = type,
         amountFen = amountFen,
+        accountId = null,
+        accountName = null,
         categoryId = 10L,
         categoryName = categoryName,
         remark = null,

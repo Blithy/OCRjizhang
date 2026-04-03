@@ -41,6 +41,8 @@ class TransactionSummaryCalculatorTest {
         userId = 1L,
         type = type,
         amountFen = amountFen,
+        accountId = null,
+        accountName = null,
         categoryId = 10L,
         categoryName = "测试分类",
         remark = null,

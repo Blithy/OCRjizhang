@@ -17,7 +17,7 @@ class CategoryDefaultsTest {
             now = 1_000L,
         )
 
-        assertEquals(14, result.size)
+        assertEquals(33, result.size)
         assertTrue(result.any { it.type == RecordType.EXPENSE && it.name == CategoryDefaults.UNCATEGORIZED_NAME })
         assertTrue(result.any { it.type == RecordType.INCOME && it.name == CategoryDefaults.UNCATEGORIZED_NAME })
         assertTrue(result.all { it.isDefault })
@@ -60,7 +60,7 @@ class CategoryDefaultsTest {
             now = 2_000L,
         )
 
-        assertEquals(12, result.size)
+        assertEquals(31, result.size)
         assertTrue(result.none { it.type == RecordType.EXPENSE && it.name == "餐饮" })
         assertTrue(result.none { it.type == RecordType.INCOME && it.name == CategoryDefaults.UNCATEGORIZED_NAME })
     }
@@ -69,19 +69,38 @@ class CategoryDefaultsTest {
     fun `buildMissingDefaults skips reseeding when legacy default count is already complete`() {
         val legacyExpenseDefaults = listOf(
             "餐饮",
+            "饮品",
+            "零食",
+            "买菜",
             "交通",
+            "打车",
             "购物",
+            "服饰",
+            "美妆",
             "日用",
             "娱乐",
+            "运动",
             "医疗",
+            "学习",
             "住房",
+            "水电",
+            "通讯",
+            "旅行",
+            "社交",
+            "礼物",
+            "宠物",
             "未分类",
         ).map(CategoryDefaults::legacyAliasOf)
         val legacyIncomeDefaults = listOf(
             "工资",
             "奖金",
             "兼职",
+            "收款",
+            "报销",
+            "退款",
             "理财",
+            "利息",
+            "红包",
             "其他",
             "未分类",
         ).map(CategoryDefaults::legacyAliasOf)
