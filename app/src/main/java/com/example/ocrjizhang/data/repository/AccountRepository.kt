@@ -28,7 +28,15 @@ class AccountRepository @Inject constructor(
             existingAccounts = accountDao.getAccounts(userId),
         )
         if (missingDefaults.isEmpty()) return
+        val now = System.currentTimeMillis()
         accountDao.upsertAll(missingDefaults)
+        missingDefaults.forEach { account ->
+            enqueueAccountSync(
+                entity = account,
+                operationType = SyncOperationType.CREATE,
+                createdAt = now,
+            )
+        }
     }
 
     suspend fun createAccount(userId: Long, rawName: String, balanceFen: Long) {

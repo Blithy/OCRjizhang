@@ -141,6 +141,7 @@ class SyncRepository @Inject constructor(
             if (remoteAccounts.isNotEmpty()) {
                 accountDao.upsertAll(remoteAccounts)
             }
+            ensureDefaultAccountsPresent(userId)
 
             if (payload.categories.isNotEmpty()) {
                 categoryDao.upsertAll(payload.categories.map(::toCategoryEntity))
@@ -366,6 +367,30 @@ class SyncRepository @Inject constructor(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
         )
+
+    private suspend fun ensureDefaultAccountsPresent(userId: Long) {
+        val existingAccounts = accountDao.getAccounts(userId)
+        val missingDefaults = AccountDefaults.buildMissingDefaults(
+            userId = userId,
+            existingAccounts = existingAccounts,
+        )
+        if (missingDefaults.isEmpty()) return
+
+        accountDao.upsertAll(missingDefaults)
+        val now = System.currentTimeMillis()
+        missingDefaults.forEach { account ->
+            syncOperationDao.enqueue(
+                SyncOperationEntity(
+                    entityType = SyncEntityType.ACCOUNT,
+                    entityId = account.id,
+                    operationType = SyncOperationType.CREATE,
+                    payloadJson = gson.toJson(account),
+                    createdAt = now,
+                    retryCount = 0,
+                ),
+            )
+        }
+    }
 
     private fun toTransactionEntity(
         dto: TransactionDto,
