@@ -55,6 +55,7 @@
     <string name="profile_header_nickname_placeholder">未设置昵称</string>
     <string name="profile_header_contact_placeholder">可在用户管理中补充邮箱或手机号</string>
     <string name="profile_user_manage_entry_title">用户管理</string>
+    <string name="profile_user_manage_entry_subtitle">修改昵称、邮箱、手机号和登录密码</string>
     <string name="profile_category_entry_title">分类管理</string>
     <string name="profile_category_entry_subtitle">管理本地分类，新增和编辑都会立即应用到记账流程。</string>
     <string name="profile_sync_entry_title">立即同步</string>

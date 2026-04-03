@@ -39,7 +39,7 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.openUserManageButton.setOnClickListener {
+        binding.userManageCard.setOnClickListener {
             showUserManagementDialog(viewModel.uiState.value)
         }
 
@@ -70,8 +70,8 @@ class ProfileFragment : Fragment() {
                             phone = state.phone,
                         )
 
-                        binding.openUserManageButton.isEnabled = !state.isUpdatingUser
-                        binding.openUserManageButton.alpha = if (state.isUpdatingUser) 0.65f else 1f
+                        binding.userManageCard.isEnabled = !state.isUpdatingUser
+                        binding.userManageCard.alpha = if (state.isUpdatingUser) 0.65f else 1f
 
                         binding.syncEntryCard.isEnabled = !state.isSyncing
                         binding.syncEntryCard.alpha = if (state.isSyncing) 0.65f else 1f
