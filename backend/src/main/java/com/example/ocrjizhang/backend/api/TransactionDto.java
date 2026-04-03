@@ -5,6 +5,8 @@ public record TransactionDto(
     long userId,
     String type,
     long amountFen,
+    Long accountId,
+    String accountName,
     long categoryId,
     String categoryName,
     String remark,

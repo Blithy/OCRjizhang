@@ -1,10 +1,12 @@
 package com.example.ocrjizhang.data.repository
 
 import androidx.room.withTransaction
+import com.example.ocrjizhang.data.local.dao.AccountDao
 import com.example.ocrjizhang.data.local.dao.CategoryDao
 import com.example.ocrjizhang.data.local.dao.SyncOperationDao
 import com.example.ocrjizhang.data.local.dao.TransactionDao
 import com.example.ocrjizhang.data.local.database.AppDatabase
+import com.example.ocrjizhang.data.local.entity.AccountEntity
 import com.example.ocrjizhang.data.local.entity.CategoryEntity
 import com.example.ocrjizhang.data.local.entity.RecordType
 import com.example.ocrjizhang.data.local.entity.SyncEntityType
@@ -19,6 +21,7 @@ import com.example.ocrjizhang.data.remote.response.CategoryDto
 import com.example.ocrjizhang.data.remote.response.SyncPullPayloadDto
 import com.example.ocrjizhang.data.remote.response.TransactionDto
 import com.example.ocrjizhang.data.remote.service.SyncService
+import com.example.ocrjizhang.utils.LocalIdGenerator
 import com.google.gson.Gson
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,6 +37,7 @@ data class SyncResult(
 class SyncRepository @Inject constructor(
     private val database: AppDatabase,
     private val sessionManager: SessionManager,
+    private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
     private val transactionDao: TransactionDao,
     private val syncOperationDao: SyncOperationDao,
@@ -100,15 +104,43 @@ class SyncRepository @Inject constructor(
 
     private suspend fun applyRemoteSnapshot(userId: Long, payload: SyncPullPayloadDto) {
         database.withTransaction {
+            val localTransactions = transactionDao.getTransactions(userId)
+            val accountsById = accountDao.getAccounts(userId)
+                .associateBy { it.id }
+                .toMutableMap()
+            val accountsByName = accountsById.values
+                .associateBy { it.name.trim().lowercase() }
+                .toMutableMap()
+
+            val remoteTransactions = payload.transactions.map { dto ->
+                val accountBinding = resolveAccountBinding(
+                    userId = userId,
+                    dto = dto,
+                    accountsById = accountsById,
+                    accountsByName = accountsByName,
+                )
+                toTransactionEntity(
+                    dto = dto,
+                    accountIdOverride = accountBinding.accountId,
+                    accountNameOverride = accountBinding.accountName,
+                )
+            }
+
             transactionDao.deleteByUserId(userId)
             categoryDao.deleteByUserId(userId)
 
             if (payload.categories.isNotEmpty()) {
                 categoryDao.upsertAll(payload.categories.map(::toCategoryEntity))
             }
-            if (payload.transactions.isNotEmpty()) {
-                transactionDao.upsertAll(payload.transactions.map(::toTransactionEntity))
+            if (remoteTransactions.isNotEmpty()) {
+                transactionDao.upsertAll(remoteTransactions)
             }
+
+            reconcileAccountBalancesAfterSnapshot(
+                localTransactions = localTransactions,
+                remoteTransactions = remoteTransactions,
+                accountsById = accountsById,
+            )
         }
     }
 
@@ -248,6 +280,8 @@ class SyncRepository @Inject constructor(
             userId = entity.userId,
             type = entity.type.name,
             amountFen = entity.amountFen,
+            accountId = entity.accountId,
+            accountName = entity.accountName,
             categoryId = entity.categoryId,
             categoryName = entity.categoryName,
             remark = entity.remark,
@@ -272,22 +306,116 @@ class SyncRepository @Inject constructor(
             syncStatus = SyncStatus.SYNCED,
         )
 
-    private fun toTransactionEntity(dto: TransactionDto): TransactionEntity =
+    private fun toTransactionEntity(
+        dto: TransactionDto,
+        accountIdOverride: Long?,
+        accountNameOverride: String?,
+    ): TransactionEntity =
         TransactionEntity(
             id = dto.id,
             userId = dto.userId,
             type = RecordType.valueOf(dto.type),
             amountFen = dto.amountFen,
-            accountId = null,
-            accountName = null,
+            accountId = accountIdOverride ?: dto.accountId,
+            accountName = accountNameOverride ?: dto.accountName,
             categoryId = dto.categoryId,
             categoryName = dto.categoryName,
             remark = dto.remark,
             merchantName = dto.merchantName,
             transactionTime = dto.transactionTime,
-            source = TransactionSource.valueOf(dto.source),
+            source = runCatching { TransactionSource.valueOf(dto.source) }
+                .getOrDefault(TransactionSource.MANUAL),
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             syncStatus = SyncStatus.SYNCED,
         )
+
+    private suspend fun resolveAccountBinding(
+        userId: Long,
+        dto: TransactionDto,
+        accountsById: MutableMap<Long, AccountEntity>,
+        accountsByName: MutableMap<String, AccountEntity>,
+    ): AccountBinding {
+        val accountId = dto.accountId
+        val accountName = dto.accountName?.trim()?.takeIf { it.isNotBlank() }
+
+        if (accountId != null) {
+            val accountById = accountsById[accountId]
+            if (accountById != null) {
+                return AccountBinding(accountById.id, accountById.name)
+            }
+        }
+
+        if (accountName != null) {
+            val accountKey = accountName.lowercase()
+            val accountByName = accountsByName[accountKey]
+            if (accountByName != null) {
+                return AccountBinding(accountByName.id, accountByName.name)
+            }
+
+            val now = System.currentTimeMillis()
+            val preferredId = accountId
+                ?.takeIf { it > 0L && !accountsById.containsKey(it) }
+                ?: LocalIdGenerator.nextId()
+            val createdAccount = AccountEntity(
+                id = preferredId,
+                userId = userId,
+                name = accountName,
+                symbol = AccountDefaults.buildSymbol(accountName),
+                balanceFen = 0L,
+                isDefault = false,
+                createdAt = now,
+                updatedAt = now,
+            )
+            accountDao.upsert(createdAccount)
+            accountsById[createdAccount.id] = createdAccount
+            accountsByName[accountKey] = createdAccount
+            return AccountBinding(createdAccount.id, createdAccount.name)
+        }
+
+        return AccountBinding(null, null)
+    }
+
+    private suspend fun reconcileAccountBalancesAfterSnapshot(
+        localTransactions: List<TransactionEntity>,
+        remoteTransactions: List<TransactionEntity>,
+        accountsById: Map<Long, AccountEntity>,
+    ) {
+        val localNet = buildAccountNetMap(localTransactions)
+        val remoteNet = buildAccountNetMap(remoteTransactions)
+        val now = System.currentTimeMillis()
+        val updatedAccounts = accountsById.values.mapNotNull { account ->
+            val delta = (remoteNet[account.id] ?: 0L) - (localNet[account.id] ?: 0L)
+            if (delta == 0L) {
+                null
+            } else {
+                account.copy(
+                    balanceFen = account.balanceFen + delta,
+                    updatedAt = now,
+                )
+            }
+        }
+        if (updatedAccounts.isNotEmpty()) {
+            accountDao.upsertAll(updatedAccounts)
+        }
+    }
+
+    private fun buildAccountNetMap(transactions: List<TransactionEntity>): Map<Long, Long> {
+        val result = mutableMapOf<Long, Long>()
+        transactions.forEach { transaction ->
+            val accountId = transaction.accountId ?: return@forEach
+            val signedAmount = if (transaction.type == RecordType.INCOME) {
+                transaction.amountFen
+            } else {
+                -transaction.amountFen
+            }
+            result[accountId] = (result[accountId] ?: 0L) + signedAmount
+        }
+        return result
+    }
+
+    private data class AccountBinding(
+        val accountId: Long?,
+        val accountName: String?,
+    )
 }

@@ -5,6 +5,8 @@ data class TransactionDto(
     val userId: Long,
     val type: String,
     val amountFen: Long,
+    val accountId: Long?,
+    val accountName: String?,
     val categoryId: Long,
     val categoryName: String,
     val remark: String?,
