@@ -1,8 +1,13 @@
 package com.example.ocrjizhang.data.repository
 
 import com.example.ocrjizhang.data.local.dao.AccountDao
+import com.example.ocrjizhang.data.local.dao.SyncOperationDao
 import com.example.ocrjizhang.data.local.entity.AccountEntity
+import com.example.ocrjizhang.data.local.entity.SyncEntityType
+import com.example.ocrjizhang.data.local.entity.SyncOperationEntity
+import com.example.ocrjizhang.data.local.entity.SyncOperationType
 import com.example.ocrjizhang.utils.LocalIdGenerator
+import com.google.gson.Gson
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -10,6 +15,8 @@ import kotlinx.coroutines.flow.Flow
 @Singleton
 class AccountRepository @Inject constructor(
     private val accountDao: AccountDao,
+    private val syncOperationDao: SyncOperationDao,
+    private val gson: Gson,
 ) {
 
     fun observeAccounts(userId: Long): Flow<List<AccountEntity>> =
@@ -30,18 +37,18 @@ class AccountRepository @Inject constructor(
         validateBalance(balanceFen)
 
         val now = System.currentTimeMillis()
-        accountDao.upsert(
-            AccountEntity(
-                id = LocalIdGenerator.nextId(),
-                userId = userId,
-                name = name,
-                symbol = AccountDefaults.buildSymbol(name),
-                balanceFen = balanceFen,
-                isDefault = false,
-                createdAt = now,
-                updatedAt = now,
-            ),
+        val account = AccountEntity(
+            id = LocalIdGenerator.nextId(),
+            userId = userId,
+            name = name,
+            symbol = AccountDefaults.buildSymbol(name),
+            balanceFen = balanceFen,
+            isDefault = false,
+            createdAt = now,
+            updatedAt = now,
         )
+        accountDao.upsert(account)
+        enqueueAccountSync(account, SyncOperationType.CREATE, now)
     }
 
     suspend fun updateAccount(userId: Long, accountId: Long, rawName: String, balanceFen: Long) {
@@ -50,19 +57,31 @@ class AccountRepository @Inject constructor(
         validateName(userId, name, excludedId = accountId)
         validateBalance(balanceFen)
 
-        accountDao.upsert(
-            existing.copy(
-                name = name,
-                symbol = AccountDefaults.buildSymbol(name),
-                balanceFen = balanceFen,
-                updatedAt = System.currentTimeMillis(),
-            ),
+        val now = System.currentTimeMillis()
+        val updated = existing.copy(
+            name = name,
+            symbol = AccountDefaults.buildSymbol(name),
+            balanceFen = balanceFen,
+            updatedAt = now,
         )
+        accountDao.upsert(updated)
+        enqueueAccountSync(updated, SyncOperationType.UPDATE, now)
     }
 
     suspend fun deleteAccount(userId: Long, accountId: Long) {
         getOwnedAccount(userId, accountId)
+        val now = System.currentTimeMillis()
         accountDao.deleteById(accountId)
+        syncOperationDao.enqueue(
+            SyncOperationEntity(
+                entityType = SyncEntityType.ACCOUNT,
+                entityId = accountId,
+                operationType = SyncOperationType.DELETE,
+                payloadJson = null,
+                createdAt = now,
+                retryCount = 0,
+            ),
+        )
     }
 
     private suspend fun getOwnedAccount(userId: Long, accountId: Long): AccountEntity =
@@ -84,5 +103,22 @@ class AccountRepository @Inject constructor(
         if (balanceFen < 0L) {
             error("账户余额不能为负数")
         }
+    }
+
+    private suspend fun enqueueAccountSync(
+        entity: AccountEntity,
+        operationType: SyncOperationType,
+        createdAt: Long,
+    ) {
+        syncOperationDao.enqueue(
+            SyncOperationEntity(
+                entityType = SyncEntityType.ACCOUNT,
+                entityId = entity.id,
+                operationType = operationType,
+                payloadJson = gson.toJson(entity),
+                createdAt = createdAt,
+                retryCount = 0,
+            ),
+        )
     }
 }

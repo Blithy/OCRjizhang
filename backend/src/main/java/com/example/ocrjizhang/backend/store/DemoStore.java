@@ -1,6 +1,7 @@
 package com.example.ocrjizhang.backend.store;
 
 import com.example.ocrjizhang.backend.api.AuthPayloadDto;
+import com.example.ocrjizhang.backend.api.AccountDto;
 import com.example.ocrjizhang.backend.api.CategoryDto;
 import com.example.ocrjizhang.backend.api.LoginRequest;
 import com.example.ocrjizhang.backend.api.RegisterRequest;
@@ -29,6 +30,7 @@ public class DemoStore {
     private final Map<Long, UserRecord> usersById = new ConcurrentHashMap<>();
     private final Map<String, Long> userIdsByUsername = new ConcurrentHashMap<>();
     private final Map<String, Long> userIdsByToken = new ConcurrentHashMap<>();
+    private final Map<Long, AccountDto> accountsById = new ConcurrentHashMap<>();
     private final Map<Long, CategoryDto> categoriesById = new ConcurrentHashMap<>();
     private final Map<Long, TransactionDto> transactionsById = new ConcurrentHashMap<>();
     private final AtomicLong userIdGenerator = new AtomicLong(DEMO_USER_ID + 1);
@@ -120,6 +122,54 @@ public class DemoStore {
         );
         usersById.put(userId, updated);
         return toAuthPayload(updated, null);
+    }
+
+    public List<AccountDto> getAccounts(long userId) {
+        return accountsById.values().stream()
+            .filter(account -> account.userId() == userId)
+            .sorted(Comparator
+                .comparing(AccountDto::isDefault).reversed()
+                .thenComparingLong(AccountDto::updatedAt).reversed()
+                .thenComparing(AccountDto::name))
+            .toList();
+    }
+
+    public synchronized AccountDto createOrUpdateAccount(long userId, AccountDto request, Long pathAccountId) {
+        if (request == null) {
+            throw new IllegalArgumentException("账户数据不能为空");
+        }
+        if (pathAccountId != null && request.id() != pathAccountId) {
+            throw new IllegalArgumentException("账户 ID 不一致");
+        }
+
+        String normalizedName = requireText(request.name(), "账户名称不能为空").trim();
+        AccountDto existingByName = findAccountByName(userId, normalizedName);
+        long canonicalId = existingByName != null ? existingByName.id() : request.id();
+        AccountDto account = new AccountDto(
+            canonicalId,
+            userId,
+            normalizedName,
+            blankToNull(request.symbol()),
+            request.balanceFen(),
+            request.isDefault(),
+            existingByName != null ? existingByName.createdAt() : request.createdAt(),
+            normalizeUpdatedAt(request.updatedAt())
+        );
+        accountsById.put(canonicalId, account);
+        if (existingByName != null && existingByName.id() != canonicalId) {
+            accountsById.remove(existingByName.id());
+            remapTransactionAccount(userId, existingByName.id(), account.id(), account.name());
+        }
+        return account;
+    }
+
+    public synchronized void deleteAccount(long userId, long accountId) {
+        AccountDto account = accountsById.get(accountId);
+        if (account == null || account.userId() != userId) {
+            throw new IllegalArgumentException("账户不存在");
+        }
+        accountsById.remove(accountId);
+        clearTransactionAccount(userId, accountId);
     }
 
     public List<CategoryDto> getCategories(long userId) {
@@ -233,6 +283,9 @@ public class DemoStore {
             return;
         }
 
+        safeList(request.createAccounts()).forEach(account -> createOrUpdateAccount(userId, account, null));
+        safeList(request.updateAccounts()).forEach(account -> createOrUpdateAccount(userId, account, account.id()));
+        safeList(request.deleteAccountIds()).forEach(accountId -> deleteAccount(userId, accountId));
         safeList(request.createCategories()).forEach(category -> createOrUpdateCategory(userId, category, null));
         safeList(request.updateCategories()).forEach(category -> createOrUpdateCategory(userId, category, category.id()));
         safeList(request.deleteCategoryIds()).forEach(categoryId -> deleteCategory(userId, categoryId));
@@ -244,6 +297,7 @@ public class DemoStore {
     public SyncPullPayloadDto pullAll(long userId) {
         compactCategories(userId);
         return new SyncPullPayloadDto(
+            getAccounts(userId),
             getCategories(userId),
             getTransactions(userId, null, null, null),
             System.currentTimeMillis()
@@ -299,6 +353,14 @@ public class DemoStore {
         return username.trim().toLowerCase(Locale.ROOT);
     }
 
+    private AccountDto findAccountByName(long userId, String name) {
+        return accountsById.values().stream()
+            .filter(account -> account.userId() == userId)
+            .filter(account -> account.name().equalsIgnoreCase(name))
+            .findFirst()
+            .orElse(null);
+    }
+
     private CategoryDto findCategoryByNameAndType(long userId, String name, String type) {
         return categoriesById.values().stream()
             .filter(category -> category.userId() == userId)
@@ -306,6 +368,57 @@ public class DemoStore {
             .filter(category -> category.name().equalsIgnoreCase(name))
             .findFirst()
             .orElse(null);
+    }
+
+    private void remapTransactionAccount(long userId, long fromAccountId, long toAccountId, String accountName) {
+        if (fromAccountId == toAccountId) {
+            return;
+        }
+        transactionsById.replaceAll((transactionId, transaction) -> {
+            if (transaction.userId() != userId || !Long.valueOf(fromAccountId).equals(transaction.accountId())) {
+                return transaction;
+            }
+            return new TransactionDto(
+                transaction.id(),
+                transaction.userId(),
+                transaction.type(),
+                transaction.amountFen(),
+                toAccountId,
+                accountName,
+                transaction.categoryId(),
+                transaction.categoryName(),
+                transaction.remark(),
+                transaction.merchantName(),
+                transaction.transactionTime(),
+                transaction.source(),
+                transaction.createdAt(),
+                transaction.updatedAt()
+            );
+        });
+    }
+
+    private void clearTransactionAccount(long userId, long accountId) {
+        transactionsById.replaceAll((transactionId, transaction) -> {
+            if (transaction.userId() != userId || !Long.valueOf(accountId).equals(transaction.accountId())) {
+                return transaction;
+            }
+            return new TransactionDto(
+                transaction.id(),
+                transaction.userId(),
+                transaction.type(),
+                transaction.amountFen(),
+                null,
+                null,
+                transaction.categoryId(),
+                transaction.categoryName(),
+                transaction.remark(),
+                transaction.merchantName(),
+                transaction.transactionTime(),
+                transaction.source(),
+                transaction.createdAt(),
+                transaction.updatedAt()
+            );
+        });
     }
 
     private void compactCategories(long userId) {

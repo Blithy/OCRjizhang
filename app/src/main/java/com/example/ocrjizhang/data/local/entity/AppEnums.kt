@@ -20,6 +20,7 @@ enum class SyncStatus {
 enum class SyncEntityType {
     TRANSACTION,
     CATEGORY,
+    ACCOUNT,
 }
 
 enum class SyncOperationType {

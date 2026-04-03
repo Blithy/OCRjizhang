@@ -31,6 +31,9 @@ class DemoStoreTest {
         demoStore.applySyncPush(
             registered.userId(),
             new SyncPushRequest(
+                List.of(),
+                List.of(),
+                List.of(),
                 List.of(new CategoryDto(101L, registered.userId(), "餐饮", "EXPENSE", null, null, false, 1L, 2L)),
                 List.of(),
                 List.of(),
@@ -70,6 +73,9 @@ class DemoStoreTest {
         demoStore.applySyncPush(
             registered.userId(),
             new SyncPushRequest(
+                List.of(),
+                List.of(),
+                List.of(),
                 List.of(
                     new CategoryDto(101L, registered.userId(), "餐饮", "EXPENSE", null, null, true, 1L, 10L),
                     new CategoryDto(202L, registered.userId(), "餐饮", "EXPENSE", null, null, false, 2L, 20L)

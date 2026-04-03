@@ -18,6 +18,7 @@ import com.example.ocrjizhang.data.local.entity.TransactionSource
 import com.example.ocrjizhang.data.remote.request.SyncPullRequest
 import com.example.ocrjizhang.data.remote.request.SyncPushRequest
 import com.example.ocrjizhang.data.remote.response.CategoryDto
+import com.example.ocrjizhang.data.remote.response.AccountDto
 import com.example.ocrjizhang.data.remote.response.SyncPullPayloadDto
 import com.example.ocrjizhang.data.remote.response.TransactionDto
 import com.example.ocrjizhang.data.remote.service.SyncService
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.first
 
 data class SyncResult(
     val pushedCount: Int,
+    val accountCount: Int,
     val categoryCount: Int,
     val transactionCount: Int,
 )
@@ -72,6 +74,7 @@ class SyncRepository @Inject constructor(
 
         if (
             pendingOperations.isEmpty() &&
+            payload.accounts.isEmpty() &&
             payload.categories.isEmpty() &&
             payload.transactions.isEmpty()
         ) {
@@ -90,13 +93,16 @@ class SyncRepository @Inject constructor(
             }
         }
 
-        val hasRemoteData = payload.categories.isNotEmpty() || payload.transactions.isNotEmpty()
+        val hasRemoteData = payload.accounts.isNotEmpty() ||
+            payload.categories.isNotEmpty() ||
+            payload.transactions.isNotEmpty()
         if (hasRemoteData || pendingOperations.isNotEmpty()) {
             applyRemoteSnapshot(userId, payload)
         }
 
         SyncResult(
             pushedCount = uploadedCount,
+            accountCount = if (hasRemoteData || pendingOperations.isNotEmpty()) payload.accounts.size else 0,
             categoryCount = if (hasRemoteData || pendingOperations.isNotEmpty()) payload.categories.size else 0,
             transactionCount = if (hasRemoteData || pendingOperations.isNotEmpty()) payload.transactions.size else 0,
         )
@@ -104,11 +110,11 @@ class SyncRepository @Inject constructor(
 
     private suspend fun applyRemoteSnapshot(userId: Long, payload: SyncPullPayloadDto) {
         database.withTransaction {
-            val localTransactions = transactionDao.getTransactions(userId)
-            val accountsById = accountDao.getAccounts(userId)
+            val remoteAccounts = payload.accounts.map(::toAccountEntity)
+            val accountsById = remoteAccounts
                 .associateBy { it.id }
                 .toMutableMap()
-            val accountsByName = accountsById.values
+            val accountsByName = remoteAccounts
                 .associateBy { it.name.trim().lowercase() }
                 .toMutableMap()
 
@@ -128,6 +134,13 @@ class SyncRepository @Inject constructor(
 
             transactionDao.deleteByUserId(userId)
             categoryDao.deleteByUserId(userId)
+            accountDao.getAccounts(userId).forEach { account ->
+                accountDao.deleteById(account.id)
+            }
+
+            if (remoteAccounts.isNotEmpty()) {
+                accountDao.upsertAll(remoteAccounts)
+            }
 
             if (payload.categories.isNotEmpty()) {
                 categoryDao.upsertAll(payload.categories.map(::toCategoryEntity))
@@ -135,16 +148,13 @@ class SyncRepository @Inject constructor(
             if (remoteTransactions.isNotEmpty()) {
                 transactionDao.upsertAll(remoteTransactions)
             }
-
-            reconcileAccountBalancesAfterSnapshot(
-                localTransactions = localTransactions,
-                remoteTransactions = remoteTransactions,
-                accountsById = accountsById,
-            )
         }
     }
 
     private fun buildPushRequest(operations: List<SyncOperationEntity>): SyncPushRequest {
+        val createAccounts = mutableListOf<AccountDto>()
+        val updateAccounts = mutableListOf<AccountDto>()
+        val deleteAccountIds = linkedSetOf<Long>()
         val createCategories = mutableListOf<CategoryDto>()
         val updateCategories = mutableListOf<CategoryDto>()
         val deleteCategoryIds = linkedSetOf<Long>()
@@ -154,6 +164,22 @@ class SyncRepository @Inject constructor(
 
         operations.forEach { operation ->
             when (operation.entityType) {
+                SyncEntityType.ACCOUNT -> {
+                    when (operation.operationType) {
+                        SyncOperationType.CREATE -> operation.payloadJson
+                            ?.let { gson.fromJson(it, AccountEntity::class.java) }
+                            ?.let(::toAccountDto)
+                            ?.let(createAccounts::add)
+
+                        SyncOperationType.UPDATE -> operation.payloadJson
+                            ?.let { gson.fromJson(it, AccountEntity::class.java) }
+                            ?.let(::toAccountDto)
+                            ?.let(updateAccounts::add)
+
+                        SyncOperationType.DELETE -> deleteAccountIds += operation.entityId
+                    }
+                }
+
                 SyncEntityType.CATEGORY -> {
                     when (operation.operationType) {
                         SyncOperationType.CREATE -> operation.payloadJson
@@ -189,6 +215,9 @@ class SyncRepository @Inject constructor(
         }
 
         return SyncPushRequest(
+            createAccounts = createAccounts,
+            updateAccounts = updateAccounts,
+            deleteAccountIds = deleteAccountIds.toList(),
             createCategories = createCategories,
             updateCategories = updateCategories,
             deleteCategoryIds = deleteCategoryIds.toList(),
@@ -199,15 +228,20 @@ class SyncRepository @Inject constructor(
     }
 
     private suspend fun buildFullSyncPushRequest(userId: Long): SyncPushRequest {
+        val accounts = accountDao.getAccounts(userId).map(::toAccountDto)
         val categories = categoryDao.getCategories(userId).map(::toCategoryDto)
         val transactions = transactionDao.getTransactions(userId).map(::toTransactionDto)
         return SyncPushRequest(
+            createAccounts = accounts,
             createCategories = categories,
             createTransactions = transactions,
         )
     }
 
     private fun SyncPushRequest.hasChanges(): Boolean =
+        createAccounts.isNotEmpty() ||
+            updateAccounts.isNotEmpty() ||
+            deleteAccountIds.isNotEmpty() ||
         createCategories.isNotEmpty() ||
             updateCategories.isNotEmpty() ||
             deleteCategoryIds.isNotEmpty() ||
@@ -216,6 +250,9 @@ class SyncRepository @Inject constructor(
             deleteTransactionIds.isNotEmpty()
 
     private fun SyncPushRequest.totalItemCount(): Int =
+        createAccounts.size +
+            updateAccounts.size +
+            deleteAccountIds.size +
         createCategories.size +
             updateCategories.size +
             deleteCategoryIds.size +
@@ -261,6 +298,18 @@ class SyncRepository @Inject constructor(
         }
     }
 
+    private fun toAccountDto(entity: AccountEntity): AccountDto =
+        AccountDto(
+            id = entity.id,
+            userId = entity.userId,
+            name = entity.name,
+            symbol = entity.symbol,
+            balanceFen = entity.balanceFen,
+            isDefault = entity.isDefault,
+            createdAt = entity.createdAt,
+            updatedAt = entity.updatedAt,
+        )
+
     private fun toCategoryDto(entity: CategoryEntity): CategoryDto =
         CategoryDto(
             id = entity.id,
@@ -304,6 +353,18 @@ class SyncRepository @Inject constructor(
             createdAt = dto.createdAt,
             updatedAt = dto.updatedAt,
             syncStatus = SyncStatus.SYNCED,
+        )
+
+    private fun toAccountEntity(dto: AccountDto): AccountEntity =
+        AccountEntity(
+            id = dto.id,
+            userId = dto.userId,
+            name = dto.name,
+            symbol = dto.symbol.ifBlank { AccountDefaults.buildSymbol(dto.name) },
+            balanceFen = dto.balanceFen,
+            isDefault = dto.isDefault,
+            createdAt = dto.createdAt,
+            updatedAt = dto.updatedAt,
         )
 
     private fun toTransactionEntity(
@@ -374,44 +435,6 @@ class SyncRepository @Inject constructor(
         }
 
         return AccountBinding(null, null)
-    }
-
-    private suspend fun reconcileAccountBalancesAfterSnapshot(
-        localTransactions: List<TransactionEntity>,
-        remoteTransactions: List<TransactionEntity>,
-        accountsById: Map<Long, AccountEntity>,
-    ) {
-        val localNet = buildAccountNetMap(localTransactions)
-        val remoteNet = buildAccountNetMap(remoteTransactions)
-        val now = System.currentTimeMillis()
-        val updatedAccounts = accountsById.values.mapNotNull { account ->
-            val delta = (remoteNet[account.id] ?: 0L) - (localNet[account.id] ?: 0L)
-            if (delta == 0L) {
-                null
-            } else {
-                account.copy(
-                    balanceFen = account.balanceFen + delta,
-                    updatedAt = now,
-                )
-            }
-        }
-        if (updatedAccounts.isNotEmpty()) {
-            accountDao.upsertAll(updatedAccounts)
-        }
-    }
-
-    private fun buildAccountNetMap(transactions: List<TransactionEntity>): Map<Long, Long> {
-        val result = mutableMapOf<Long, Long>()
-        transactions.forEach { transaction ->
-            val accountId = transaction.accountId ?: return@forEach
-            val signedAmount = if (transaction.type == RecordType.INCOME) {
-                transaction.amountFen
-            } else {
-                -transaction.amountFen
-            }
-            result[accountId] = (result[accountId] ?: 0L) + signedAmount
-        }
-        return result
     }
 
     private data class AccountBinding(
