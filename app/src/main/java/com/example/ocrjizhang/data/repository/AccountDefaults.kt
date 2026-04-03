@@ -17,11 +17,14 @@ object AccountDefaults {
         userId: Long,
         existingAccounts: List<AccountEntity>,
     ): List<AccountEntity> {
-        if (existingAccounts.isNotEmpty()) {
-            return emptyList()
-        }
+        val existingNames = existingAccounts
+            .map { it.name.trim().lowercase() }
+            .toSet()
         val now = System.currentTimeMillis()
         return defaultAccounts.mapNotNull { (name, symbol) ->
+            if (existingNames.contains(name.lowercase())) {
+                return@mapNotNull null
+            }
             AccountEntity(
                 id = LocalIdGenerator.nextId(),
                 userId = userId,
