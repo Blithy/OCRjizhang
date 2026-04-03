@@ -76,4 +76,27 @@ class AccountDefaultsTest {
         assertEquals(3, result.size)
         assertTrue(result.none { it.name == "微信" })
     }
+
+    @Test
+    fun `buildDefaultUpgrades marks default account as default when same name exists`() {
+        val existing = listOf(
+            AccountEntity(
+                id = 1L,
+                userId = 101L,
+                name = "微信",
+                symbol = "W",
+                balanceFen = 1200L,
+                isDefault = false,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+
+        val result = AccountDefaults.buildDefaultUpgrades(existing)
+
+        assertEquals(1, result.size)
+        assertEquals("微信", result.first().name)
+        assertTrue(result.first().isDefault)
+        assertEquals("微", result.first().symbol)
+    }
 }

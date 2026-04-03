@@ -376,13 +376,14 @@ class SyncRepository @Inject constructor(
 
     private suspend fun ensureDefaultAccountsPresent(userId: Long) {
         val existingAccounts = accountDao.getAccounts(userId)
+        val defaultUpgrades = AccountDefaults.buildDefaultUpgrades(existingAccounts)
         val missingDefaults = AccountDefaults.buildMissingDefaults(
             userId = userId,
             existingAccounts = existingAccounts,
         )
-        if (missingDefaults.isEmpty()) return
+        if (missingDefaults.isEmpty() && defaultUpgrades.isEmpty()) return
 
-        accountDao.upsertAll(missingDefaults)
+        accountDao.upsertAll(missingDefaults + defaultUpgrades)
         val now = System.currentTimeMillis()
         missingDefaults.forEach { account ->
             syncOperationDao.enqueue(
@@ -390,6 +391,18 @@ class SyncRepository @Inject constructor(
                     entityType = SyncEntityType.ACCOUNT,
                     entityId = account.id,
                     operationType = SyncOperationType.CREATE,
+                    payloadJson = gson.toJson(account),
+                    createdAt = now,
+                    retryCount = 0,
+                ),
+            )
+        }
+        defaultUpgrades.forEach { account ->
+            syncOperationDao.enqueue(
+                SyncOperationEntity(
+                    entityType = SyncEntityType.ACCOUNT,
+                    entityId = account.id,
+                    operationType = SyncOperationType.UPDATE,
                     payloadJson = gson.toJson(account),
                     createdAt = now,
                     retryCount = 0,

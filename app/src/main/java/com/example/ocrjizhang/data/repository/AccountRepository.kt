@@ -23,17 +23,27 @@ class AccountRepository @Inject constructor(
         accountDao.observeAccounts(userId)
 
     suspend fun ensureDefaultAccounts(userId: Long) {
+        val existingAccounts = accountDao.getAccounts(userId)
+        val defaultUpgrades = AccountDefaults.buildDefaultUpgrades(existingAccounts)
         val missingDefaults = AccountDefaults.buildMissingDefaults(
             userId = userId,
-            existingAccounts = accountDao.getAccounts(userId),
+            existingAccounts = existingAccounts,
         )
-        if (missingDefaults.isEmpty()) return
+        if (missingDefaults.isEmpty() && defaultUpgrades.isEmpty()) return
+
         val now = System.currentTimeMillis()
-        accountDao.upsertAll(missingDefaults)
+        accountDao.upsertAll(missingDefaults + defaultUpgrades)
         missingDefaults.forEach { account ->
             enqueueAccountSync(
                 entity = account,
                 operationType = SyncOperationType.CREATE,
+                createdAt = now,
+            )
+        }
+        defaultUpgrades.forEach { account ->
+            enqueueAccountSync(
+                entity = account,
+                operationType = SyncOperationType.UPDATE,
                 createdAt = now,
             )
         }

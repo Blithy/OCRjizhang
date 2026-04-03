@@ -308,6 +308,18 @@ class TransactionViewModel @Inject constructor(
     }
 
     fun requestEdit(transactionId: Long?) {
+        if (transactionId == null) {
+            pendingEditRequestId.value = null
+            return
+        }
+        // Prefer immediate hydration from in-memory list to avoid late replay
+        // overriding user edits (for example account switching followed by save).
+        val immediate = transactionsState.value.firstOrNull { it.id == transactionId }
+        if (immediate != null) {
+            populateEditor(immediate)
+            pendingEditRequestId.value = null
+            return
+        }
         pendingEditRequestId.value = transactionId
     }
 
@@ -364,6 +376,10 @@ class TransactionViewModel @Inject constructor(
             emitMessage("登录状态已失效，请重新登录")
             return
         }
+        if (pendingEditRequestId.value != null && editingTransactionId.value == null) {
+            emitMessage("交易详情仍在加载，请稍后再试")
+            return
+        }
 
         val amountFen = AccountingFormatters.parseToFen(amountInput.value)
         if (amountFen == null) {
@@ -371,13 +387,19 @@ class TransactionViewModel @Inject constructor(
             return
         }
 
-        val categoryId = uiState.value.selectedCategoryId
+        val currentCategories = categoriesState.value
+        val categoryId = selectedCategoryId.value
+            ?.takeIf { selectedId -> currentCategories.any { it.id == selectedId } }
+            ?: currentCategories.firstOrNull()?.id
         if (categoryId == null) {
             emitMessage("请先选择分类")
             return
         }
 
-        val accountId = uiState.value.selectedAccountId
+        val currentAccounts = accountsState.value
+        val accountId = selectedAccountId.value
+            ?.takeIf { selectedId -> currentAccounts.any { it.id == selectedId } }
+            ?: currentAccounts.firstOrNull()?.id
         if (accountId == null) {
             emitMessage("请先选择资金账户")
             return

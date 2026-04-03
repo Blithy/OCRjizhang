@@ -38,6 +38,24 @@ object AccountDefaults {
         }
     }
 
+    fun buildDefaultUpgrades(existingAccounts: List<AccountEntity>): List<AccountEntity> {
+        val now = System.currentTimeMillis()
+        return defaultAccounts.mapNotNull { (name, symbol) ->
+            val existing = existingAccounts.firstOrNull {
+                it.name.trim().equals(name, ignoreCase = true)
+            } ?: return@mapNotNull null
+
+            val requiresUpgrade = !existing.isDefault || existing.symbol != symbol
+            if (!requiresUpgrade) return@mapNotNull null
+
+            existing.copy(
+                symbol = symbol,
+                isDefault = true,
+                updatedAt = now,
+            )
+        }
+    }
+
     fun buildSymbol(name: String): String =
         name.trim().take(1).ifBlank { "账" }
 }

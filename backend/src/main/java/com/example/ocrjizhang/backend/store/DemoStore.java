@@ -11,6 +11,7 @@ import com.example.ocrjizhang.backend.api.TransactionDto;
 import com.example.ocrjizhang.backend.api.UpdateCurrentUserRequest;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -141,24 +142,58 @@ public class DemoStore {
         if (pathAccountId != null && request.id() != pathAccountId) {
             throw new IllegalArgumentException("账户 ID 不一致");
         }
+        if (request.id() <= 0L) {
+            throw new IllegalArgumentException("账户 ID 非法");
+        }
 
         String normalizedName = requireText(request.name(), "账户名称不能为空").trim();
+        AccountDto existingByPathId = pathAccountId == null ? null : accountsById.get(pathAccountId);
+        if (existingByPathId != null && existingByPathId.userId() != userId) {
+            throw new IllegalArgumentException("账户不存在");
+        }
+        AccountDto existingByRequestId = accountsById.get(request.id());
+        if (existingByRequestId != null && existingByRequestId.userId() != userId) {
+            throw new IllegalArgumentException("账户不存在");
+        }
         AccountDto existingByName = findAccountByName(userId, normalizedName);
-        long canonicalId = existingByName != null ? existingByName.id() : request.id();
+        long canonicalId = existingByName != null
+            ? existingByName.id()
+            : (existingByPathId != null ? existingByPathId.id() : request.id());
+        AccountDto canonicalExisting = accountsById.get(canonicalId);
+        boolean shouldKeepDefault = (existingByName != null && existingByName.isDefault())
+            || (existingByPathId != null && existingByPathId.isDefault());
         AccountDto account = new AccountDto(
             canonicalId,
             userId,
             normalizedName,
             blankToNull(request.symbol()),
             request.balanceFen(),
-            request.isDefault(),
-            existingByName != null ? existingByName.createdAt() : request.createdAt(),
+            shouldKeepDefault
+                || (existingByRequestId != null && existingByRequestId.isDefault())
+                || (canonicalExisting != null && canonicalExisting.isDefault())
+                || request.isDefault(),
+            canonicalExisting != null ? canonicalExisting.createdAt() : request.createdAt(),
             normalizeUpdatedAt(request.updatedAt())
         );
         accountsById.put(canonicalId, account);
-        if (existingByName != null && existingByName.id() != canonicalId) {
-            accountsById.remove(existingByName.id());
-            remapTransactionAccount(userId, existingByName.id(), account.id(), account.name());
+
+        LinkedHashSet<Long> obsoleteIds = new LinkedHashSet<>();
+        if (existingByPathId != null && existingByPathId.id() != canonicalId) {
+            obsoleteIds.add(existingByPathId.id());
+        }
+        if (existingByRequestId != null && existingByRequestId.id() != canonicalId) {
+            obsoleteIds.add(existingByRequestId.id());
+        }
+        if (request.id() != canonicalId) {
+            obsoleteIds.add(request.id());
+        }
+
+        for (Long obsoleteId : obsoleteIds) {
+            AccountDto obsolete = accountsById.get(obsoleteId);
+            if (obsolete != null && obsolete.userId() == userId) {
+                accountsById.remove(obsoleteId);
+            }
+            remapTransactionAccount(userId, obsoleteId, account.id(), account.name());
         }
         return account;
     }
@@ -243,20 +278,29 @@ public class DemoStore {
         if (pathTransactionId != null && request.id() != pathTransactionId) {
             throw new IllegalArgumentException("交易 ID 不一致");
         }
+        TransactionDto existing = transactionsById.get(request.id());
+        if (existing != null && existing.userId() != userId) {
+            throw new IllegalArgumentException("交易不存在");
+        }
 
         String normalizedType = requireText(request.type(), "交易类型不能为空").trim().toUpperCase(Locale.ROOT);
         String normalizedCategoryName = requireText(request.categoryName(), "分类名称不能为空").trim();
         CategoryDto canonicalCategory = findCategoryByNameAndType(userId, normalizedCategoryName, normalizedType);
         long categoryId = canonicalCategory != null ? canonicalCategory.id() : request.categoryId();
         String categoryName = canonicalCategory != null ? canonicalCategory.name() : normalizedCategoryName;
+        AccountBinding canonicalAccount = resolveTransactionAccount(
+            userId,
+            request.accountId(),
+            blankToNull(request.accountName())
+        );
 
         TransactionDto transaction = new TransactionDto(
             request.id(),
             userId,
             normalizedType,
             request.amountFen(),
-            request.accountId(),
-            blankToNull(request.accountName()),
+            canonicalAccount.accountId(),
+            canonicalAccount.accountName(),
             categoryId,
             categoryName,
             blankToNull(request.remark()),
@@ -266,7 +310,11 @@ public class DemoStore {
             request.createdAt(),
             normalizeUpdatedAt(request.updatedAt())
         );
+        if (existing != null) {
+            rollbackTransactionBalanceEffect(userId, existing);
+        }
         transactionsById.put(transaction.id(), transaction);
+        applyTransactionBalanceEffect(userId, transaction);
         return transaction;
     }
 
@@ -275,6 +323,7 @@ public class DemoStore {
         if (transaction == null || transaction.userId() != userId) {
             throw new IllegalArgumentException("交易不存在");
         }
+        rollbackTransactionBalanceEffect(userId, transaction);
         transactionsById.remove(transactionId);
     }
 
@@ -361,6 +410,27 @@ public class DemoStore {
             .orElse(null);
     }
 
+    private AccountBinding resolveTransactionAccount(long userId, Long accountId, String accountName) {
+        AccountDto accountById = null;
+        if (accountId != null) {
+            AccountDto candidate = accountsById.get(accountId);
+            if (candidate != null && candidate.userId() == userId) {
+                accountById = candidate;
+            }
+        }
+
+        AccountDto accountByName = accountName == null ? null : findAccountByName(userId, accountName);
+        AccountDto canonicalAccount = accountById != null ? accountById : accountByName;
+        if (canonicalAccount != null) {
+            return new AccountBinding(canonicalAccount.id(), canonicalAccount.name());
+        }
+
+        if (accountId != null && accountName == null) {
+            return new AccountBinding(null, null);
+        }
+        return new AccountBinding(accountId, accountName);
+    }
+
     private CategoryDto findCategoryByNameAndType(long userId, String name, String type) {
         return categoriesById.values().stream()
             .filter(category -> category.userId() == userId)
@@ -421,6 +491,44 @@ public class DemoStore {
         });
     }
 
+    private void applyTransactionBalanceEffect(long userId, TransactionDto transaction) {
+        updateAccountBalanceByTransaction(userId, transaction, 1L);
+    }
+
+    private void rollbackTransactionBalanceEffect(long userId, TransactionDto transaction) {
+        updateAccountBalanceByTransaction(userId, transaction, -1L);
+    }
+
+    private void updateAccountBalanceByTransaction(long userId, TransactionDto transaction, long multiplier) {
+        Long accountId = transaction.accountId();
+        if (accountId == null) {
+            return;
+        }
+        AccountDto account = accountsById.get(accountId);
+        if (account == null || account.userId() != userId) {
+            return;
+        }
+        long signedAmount = signedAmount(transaction.type(), transaction.amountFen());
+        long nextBalance = account.balanceFen() + (signedAmount * multiplier);
+        accountsById.put(
+            account.id(),
+            new AccountDto(
+                account.id(),
+                account.userId(),
+                account.name(),
+                account.symbol(),
+                nextBalance,
+                account.isDefault(),
+                account.createdAt(),
+                System.currentTimeMillis()
+            )
+        );
+    }
+
+    private static long signedAmount(String type, long amountFen) {
+        return "INCOME".equalsIgnoreCase(type) ? amountFen : -amountFen;
+    }
+
     private void compactCategories(long userId) {
         Map<String, CategoryDto> canonicalByKey = new LinkedHashMap<>();
         categoriesById.values().stream()
@@ -466,5 +574,8 @@ public class DemoStore {
                 transaction.updatedAt()
             );
         });
+    }
+
+    private record AccountBinding(Long accountId, String accountName) {
     }
 }
