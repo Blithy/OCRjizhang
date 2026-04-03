@@ -41,7 +41,7 @@
         app:labelVisibilityMode="labeled"
         app:menu="@menu/menu_bottom_nav" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/addRecordFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -49,11 +49,13 @@
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="88dp"
         android:contentDescription="@string/home_fab_add_record"
-        android:src="@drawable/ic_add_record_24"
+        android:text="@string/home_fab_add_record"
+        android:textColor="@color/primary_brand_dark"
         app:backgroundTint="@color/secondary_brand"
-        app:fabCustomSize="66dp"
-        app:maxImageSize="28dp"
+        app:icon="@drawable/ic_add_record_24"
+        app:iconPadding="8dp"
+        app:iconTint="@color/primary_brand_dark"
         app:rippleColor="@color/surface_tint_soft"
-        app:tint="@color/primary_brand_dark" />
+        app:strokeWidth="0dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

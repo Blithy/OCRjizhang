@@ -245,13 +245,18 @@
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/addAccountFab"
-        style="@style/Widget.Material3.ExtendedFloatingActionButton.Icon.Primary"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="86dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="88dp"
         android:text="@string/assets_action_add_account"
-        app:icon="@drawable/ic_add_record_24" />
+        android:textColor="@color/primary_brand_dark"
+        app:backgroundTint="@color/secondary_brand"
+        app:icon="@drawable/ic_add_record_24"
+        app:iconPadding="8dp"
+        app:iconTint="@color/primary_brand_dark"
+        app:rippleColor="@color/surface_tint_soft"
+        app:strokeWidth="0dp" />
 
 </FrameLayout>
