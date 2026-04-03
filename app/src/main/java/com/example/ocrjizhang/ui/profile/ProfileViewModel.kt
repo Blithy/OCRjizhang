@@ -26,6 +26,19 @@ class ProfileViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            authRepository.observeCurrentUserProfile().collect { profile ->
+                _uiState.value = _uiState.value.copy(
+                    username = profile?.username.orEmpty(),
+                    nickname = profile?.nickname.orEmpty(),
+                    email = profile?.email.orEmpty(),
+                    phone = profile?.phone.orEmpty(),
+                )
+            }
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             authRepository.logout()
@@ -57,6 +70,44 @@ class ProfileViewModel @Inject constructor(
             )
             _uiState.value = _uiState.value.copy(isSyncing = false)
             _eventFlow.emit(ProfileEvent.Message(message))
+        }
+    }
+
+    fun updateUserProfile(
+        nickname: String,
+        email: String,
+        phone: String,
+        password: String,
+    ) {
+        if (_uiState.value.isUpdatingUser) return
+
+        if (password.isNotBlank() && password.length < 6) {
+            viewModelScope.launch {
+                _eventFlow.emit(ProfileEvent.Message("密码至少需要 6 位"))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isUpdatingUser = true)
+            authRepository.updateCurrentUserProfile(
+                nickname = nickname,
+                email = email,
+                phone = phone,
+                password = password,
+            ).fold(
+                onSuccess = {
+                    _eventFlow.emit(ProfileEvent.UserUpdated)
+                },
+                onFailure = { throwable ->
+                    _eventFlow.emit(
+                        ProfileEvent.Message(
+                            throwable.message ?: "用户信息更新失败，请稍后重试。",
+                        ),
+                    )
+                },
+            )
+            _uiState.value = _uiState.value.copy(isUpdatingUser = false)
         }
     }
 }

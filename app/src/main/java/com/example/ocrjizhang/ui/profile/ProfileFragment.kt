@@ -1,5 +1,6 @@
 package com.example.ocrjizhang.ui.profile
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,8 +12,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.ocrjizhang.R
+import com.example.ocrjizhang.databinding.DialogUserManagementFormBinding
 import com.example.ocrjizhang.databinding.FragmentProfileBinding
 import com.example.ocrjizhang.ui.auth.navigateToLoginClearingBackStack
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -36,15 +39,19 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.syncButton.setOnClickListener {
-            viewModel.syncNow()
+        binding.userManageCard.setOnClickListener {
+            showUserManagementDialog(viewModel.uiState.value)
         }
 
-        binding.manageCategoryButton.setOnClickListener {
+        binding.categoryManageCard.setOnClickListener {
             findNavController().navigate(R.id.action_profileFragment_to_categoryFragment)
         }
 
-        binding.logoutButton.setOnClickListener {
+        binding.syncEntryCard.setOnClickListener {
+            viewModel.syncNow()
+        }
+
+        binding.logoutCard.setOnClickListener {
             viewModel.logout()
         }
 
@@ -52,8 +59,17 @@ class ProfileFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.uiState.collect { state ->
-                        binding.syncButton.isEnabled = !state.isSyncing
-                        binding.syncButton.text = getString(
+                        binding.userManageSubtitle.text = getString(
+                            R.string.profile_user_entry_subtitle,
+                            state.username.ifBlank { getString(R.string.profile_user_unknown) },
+                            state.nickname.ifBlank { getString(R.string.profile_user_unknown) },
+                        )
+                        binding.userManageCard.isEnabled = !state.isUpdatingUser
+                        binding.userManageCard.alpha = if (state.isUpdatingUser) 0.65f else 1f
+
+                        binding.syncEntryCard.isEnabled = !state.isSyncing
+                        binding.syncEntryCard.alpha = if (state.isSyncing) 0.65f else 1f
+                        binding.syncEntryTitle.text = getString(
                             if (state.isSyncing) R.string.profile_sync_action_loading
                             else R.string.profile_sync_action,
                         )
@@ -68,6 +84,10 @@ class ProfileFragment : Fragment() {
                                 findNavController().navigateToLoginClearingBackStack()
                             }
 
+                            ProfileEvent.UserUpdated -> {
+                                Snackbar.make(binding.root, R.string.profile_user_update_success, Snackbar.LENGTH_SHORT).show()
+                            }
+
                             is ProfileEvent.Message -> {
                                 Snackbar.make(binding.root, event.value, Snackbar.LENGTH_LONG).show()
                             }
@@ -76,6 +96,43 @@ class ProfileFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun showUserManagementDialog(state: ProfileUiState) {
+        val dialogBinding = DialogUserManagementFormBinding.inflate(layoutInflater)
+        dialogBinding.usernameEdit.setText(state.username)
+        dialogBinding.nicknameEdit.setText(state.nickname)
+        dialogBinding.emailEdit.setText(state.email)
+        dialogBinding.phoneEdit.setText(state.phone)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.profile_user_dialog_title)
+            .setView(dialogBinding.root)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.action_save, null)
+            .create()
+
+        dialog.setOnShowListener {
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            saveButton.setOnClickListener {
+                dialogBinding.passwordLayout.error = null
+                val password = dialogBinding.passwordEdit.text?.toString().orEmpty()
+                if (password.isNotBlank() && password.length < 6) {
+                    dialogBinding.passwordLayout.error = getString(R.string.error_password_length)
+                    return@setOnClickListener
+                }
+
+                viewModel.updateUserProfile(
+                    nickname = dialogBinding.nicknameEdit.text?.toString().orEmpty(),
+                    email = dialogBinding.emailEdit.text?.toString().orEmpty(),
+                    phone = dialogBinding.phoneEdit.text?.toString().orEmpty(),
+                    password = password,
+                )
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show()
     }
 
     override fun onDestroyView() {

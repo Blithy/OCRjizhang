@@ -2,6 +2,7 @@ package com.example.ocrjizhang.data.remote.service
 
 import com.example.ocrjizhang.data.remote.request.LoginRequest
 import com.example.ocrjizhang.data.remote.request.RegisterRequest
+import com.example.ocrjizhang.data.remote.request.UpdateCurrentUserRequest
 import com.example.ocrjizhang.data.remote.response.ApiResponse
 import com.example.ocrjizhang.data.remote.response.AuthPayloadDto
 import retrofit2.http.Body
@@ -22,6 +23,6 @@ interface AuthService {
 
     @PUT("user/me")
     suspend fun updateCurrentUser(
-        @Body request: Map<String, @JvmSuppressWildcards Any?>,
+        @Body request: UpdateCurrentUserRequest,
     ): ApiResponse<AuthPayloadDto>
 }

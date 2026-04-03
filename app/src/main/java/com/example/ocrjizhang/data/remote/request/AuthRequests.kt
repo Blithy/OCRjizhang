@@ -12,3 +12,10 @@ data class RegisterRequest(
     val phone: String?,
     val nickname: String?,
 )
+
+data class UpdateCurrentUserRequest(
+    val nickname: String?,
+    val email: String?,
+    val phone: String?,
+    val password: String?,
+)
