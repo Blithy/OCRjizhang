@@ -249,7 +249,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="20dp"
-        android:layout_marginBottom="88dp"
+        android:layout_marginBottom="16dp"
         android:text="@string/assets_action_add_account"
         android:textColor="@color/primary_brand_dark"
         app:backgroundTint="@color/secondary_brand"
