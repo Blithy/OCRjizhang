@@ -14,6 +14,7 @@ import com.example.ocrjizhang.databinding.ItemTransactionBinding
 
 class TransactionAdapter(
     private val showActions: Boolean,
+    private val enableLongPressDelete: Boolean = false,
     private val onOpen: ((TransactionListItem) -> Unit)? = null,
     private val onEdit: (TransactionListItem) -> Unit,
     private val onDelete: (TransactionListItem) -> Unit,
@@ -25,7 +26,14 @@ class TransactionAdapter(
             parent,
             false,
         )
-        return TransactionViewHolder(binding, showActions, onOpen, onEdit, onDelete)
+        return TransactionViewHolder(
+            binding = binding,
+            showActions = showActions,
+            enableLongPressDelete = enableLongPressDelete,
+            onOpen = onOpen,
+            onEdit = onEdit,
+            onDelete = onDelete,
+        )
     }
 
     override fun onBindViewHolder(holder: TransactionViewHolder, position: Int) {
@@ -35,6 +43,7 @@ class TransactionAdapter(
     class TransactionViewHolder(
         private val binding: ItemTransactionBinding,
         private val showActions: Boolean,
+        private val enableLongPressDelete: Boolean,
         private val onOpen: ((TransactionListItem) -> Unit)?,
         private val onEdit: (TransactionListItem) -> Unit,
         private val onDelete: (TransactionListItem) -> Unit,
@@ -62,6 +71,14 @@ class TransactionAdapter(
             binding.root.isFocusable = onOpen != null
             binding.root.setOnClickListener {
                 onOpen?.invoke(item)
+            }
+            binding.root.setOnLongClickListener {
+                if (enableLongPressDelete) {
+                    onDelete(item)
+                    true
+                } else {
+                    false
+                }
             }
 
             binding.editButton.setOnClickListener { onEdit(item) }

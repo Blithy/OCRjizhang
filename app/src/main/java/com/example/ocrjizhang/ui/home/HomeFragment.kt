@@ -11,9 +11,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.FragmentHomeBinding
 import com.example.ocrjizhang.ui.transaction.TransactionAdapter
 import com.example.ocrjizhang.ui.transaction.TransactionEntryBottomSheet
+import com.example.ocrjizhang.ui.transaction.TransactionListItem
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -28,13 +31,14 @@ class HomeFragment : Fragment() {
     private val recentAdapter by lazy {
         TransactionAdapter(
             showActions = false,
+            enableLongPressDelete = true,
             onOpen = { item ->
                 openTransactionEditor(item.id)
             },
             onEdit = { item ->
                 openTransactionEditor(item.id)
             },
-            onDelete = { },
+            onDelete = ::showDeleteDialog,
         )
     }
 
@@ -94,6 +98,17 @@ class HomeFragment : Fragment() {
 
     private fun openOcr(@Suppress("UNUSED_PARAMETER") view: View) {
         findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToOcrFragment())
+    }
+
+    private fun showDeleteDialog(item: TransactionListItem) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.transaction_delete_title)
+            .setMessage(R.string.transaction_delete_current_message)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.action_delete) { _, _ ->
+                viewModel.deleteTransaction(item.id)
+            }
+            .show()
     }
 
     override fun onDestroyView() {
