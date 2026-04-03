@@ -115,10 +115,11 @@ class SyncRepository @Inject constructor(
     private suspend fun applyRemoteSnapshot(userId: Long, payload: SyncPullPayloadDto) {
         database.withTransaction {
             val remoteAccounts = payload.accounts.map(::toAccountEntity)
-            val accountsById = remoteAccounts
+            val accountsToPersist = remoteAccounts.toMutableList()
+            val accountsById = accountsToPersist
                 .associateBy { it.id }
                 .toMutableMap()
-            val accountsByName = remoteAccounts
+            val accountsByName = accountsToPersist
                 .associateBy { it.name.trim().lowercase() }
                 .toMutableMap()
 
@@ -128,6 +129,7 @@ class SyncRepository @Inject constructor(
                     dto = dto,
                     accountsById = accountsById,
                     accountsByName = accountsByName,
+                    accountsToPersist = accountsToPersist,
                 )
                 toTransactionEntity(
                     dto = dto,
@@ -142,8 +144,8 @@ class SyncRepository @Inject constructor(
                 accountDao.deleteById(account.id)
             }
 
-            if (remoteAccounts.isNotEmpty()) {
-                accountDao.upsertAll(remoteAccounts)
+            if (accountsToPersist.isNotEmpty()) {
+                accountDao.upsertAll(accountsToPersist)
             }
             ensureDefaultAccountsPresent(userId)
 
@@ -425,6 +427,7 @@ class SyncRepository @Inject constructor(
         dto: TransactionDto,
         accountsById: MutableMap<Long, AccountEntity>,
         accountsByName: MutableMap<String, AccountEntity>,
+        accountsToPersist: MutableList<AccountEntity>,
     ): AccountBinding {
         val accountId = dto.accountId
         val accountName = dto.accountName?.trim()?.takeIf { it.isNotBlank() }
@@ -457,7 +460,7 @@ class SyncRepository @Inject constructor(
                 createdAt = now,
                 updatedAt = now,
             )
-            accountDao.upsert(createdAccount)
+            accountsToPersist.add(createdAccount)
             accountsById[createdAccount.id] = createdAccount
             accountsByName[accountKey] = createdAccount
             return AccountBinding(createdAccount.id, createdAccount.name)
