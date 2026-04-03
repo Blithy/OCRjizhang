@@ -51,6 +51,9 @@ class SyncRepository @Inject constructor(
         val session = sessionManager.sessionFlow.first()
         val userId = session.userId ?: error("当前还没有登录账号")
         compactLocalCategories(userId)
+        val localAccountsSnapshot = accountDao.getAccounts(userId)
+        val localCategoriesSnapshot = categoryDao.getCategories(userId)
+        val localTransactionsSnapshot = transactionDao.getTransactions(userId)
         val pendingOperations = syncOperationDao.getPendingOperations()
         val pushRequest = buildPushRequest(pendingOperations)
 
@@ -72,11 +75,12 @@ class SyncRepository @Inject constructor(
         var payload = pullResponse.data
         var uploadedCount = pendingOperations.size
 
-        if (
-            pendingOperations.isEmpty() &&
-            payload.accounts.isEmpty() &&
-            payload.categories.isEmpty() &&
-            payload.transactions.isEmpty()
+        if (pendingOperations.isEmpty() && shouldBackfillFullSnapshot(
+                payload = payload,
+                localAccounts = localAccountsSnapshot,
+                localCategories = localCategoriesSnapshot,
+                localTransactions = localTransactionsSnapshot,
+            )
         ) {
             val fullPushRequest = buildFullSyncPushRequest(userId)
             if (fullPushRequest.hasChanges()) {
@@ -460,6 +464,23 @@ class SyncRepository @Inject constructor(
         }
 
         return AccountBinding(null, null)
+    }
+
+    private fun shouldBackfillFullSnapshot(
+        payload: SyncPullPayloadDto,
+        localAccounts: List<AccountEntity>,
+        localCategories: List<CategoryEntity>,
+        localTransactions: List<TransactionEntity>,
+    ): Boolean {
+        val remoteIsCompletelyEmpty = payload.accounts.isEmpty() &&
+            payload.categories.isEmpty() &&
+            payload.transactions.isEmpty()
+        if (remoteIsCompletelyEmpty) return true
+
+        val accountOutdated = payload.accounts.size < localAccounts.size
+        val categoryOutdated = payload.categories.size < localCategories.size
+        val transactionOutdated = payload.transactions.size < localTransactions.size
+        return accountOutdated || categoryOutdated || transactionOutdated
     }
 
     private data class AccountBinding(
