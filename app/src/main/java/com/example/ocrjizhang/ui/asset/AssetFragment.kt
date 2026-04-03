@@ -46,7 +46,7 @@ class AssetFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.accountList.adapter = adapter
-        binding.addAccountButton.setOnClickListener {
+        binding.addAccountFab.setOnClickListener {
             showCreateDialog()
         }
 

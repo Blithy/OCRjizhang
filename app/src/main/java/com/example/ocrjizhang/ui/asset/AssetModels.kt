@@ -4,9 +4,7 @@ data class AssetAccountItem(
     val id: Long,
     val name: String,
     val symbol: String,
-    val detail: String,
     val balanceLabel: String,
-    val isDefault: Boolean,
 )
 
 data class AssetUiState(

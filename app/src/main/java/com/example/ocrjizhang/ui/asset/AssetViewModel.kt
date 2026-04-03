@@ -161,8 +161,6 @@ class AssetViewModel @Inject constructor(
             id = account.id,
             name = account.name,
             symbol = account.symbol,
-            detail = if (account.isDefault) "点按卡片可直接编辑余额" else "点按卡片可编辑名称和余额",
             balanceLabel = AccountingFormatters.formatFen(account.balanceFen),
-            isDefault = account.isDefault,
         )
 }

@@ -5,7 +5,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.ocrjizhang.R
 import com.example.ocrjizhang.databinding.ItemAssetAccountBinding
 
 class AssetAdapter(
@@ -32,18 +31,12 @@ class AssetAdapter(
         fun bind(item: AssetAccountItem) {
             binding.symbolView.text = item.symbol
             binding.nameView.text = item.name
-            binding.detailView.text = item.detail
             binding.balanceView.text = item.balanceLabel
-            binding.badgeView.text = binding.root.context.getString(
-                if (item.isDefault) {
-                    R.string.asset_badge_default
-                } else {
-                    R.string.asset_badge_custom
-                },
-            )
-            binding.editButton.setOnClickListener { onEdit(item) }
-            binding.deleteButton.setOnClickListener { onDelete(item) }
             binding.root.setOnClickListener { onEdit(item) }
+            binding.root.setOnLongClickListener {
+                onDelete(item)
+                true
+            }
         }
     }
 
