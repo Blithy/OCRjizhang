@@ -75,7 +75,7 @@ class SyncRepository @Inject constructor(
         var payload = pullResponse.data
         var uploadedCount = pendingOperations.size
 
-        if (pendingOperations.isEmpty() && shouldBackfillFullSnapshot(
+        if (shouldBackfillFullSnapshot(
                 payload = payload,
                 localAccounts = localAccountsSnapshot,
                 localCategories = localCategoriesSnapshot,
@@ -235,9 +235,28 @@ class SyncRepository @Inject constructor(
     }
 
     private suspend fun buildFullSyncPushRequest(userId: Long): SyncPushRequest {
-        val accounts = accountDao.getAccounts(userId).map(::toAccountDto)
+        val localAccounts = accountDao.getAccounts(userId)
         val categories = categoryDao.getCategories(userId).map(::toCategoryDto)
-        val transactions = transactionDao.getTransactions(userId).map(::toTransactionDto)
+        val localTransactions = transactionDao.getTransactions(userId)
+        val accountDeltaById = localTransactions
+            .asSequence()
+            .mapNotNull { transaction ->
+                transaction.accountId?.let { accountId ->
+                    accountId to signedAmount(transaction.type, transaction.amountFen)
+                }
+            }
+            .groupBy(
+                keySelector = { it.first },
+                valueTransform = { it.second },
+            )
+            .mapValues { (_, deltas) -> deltas.sum() }
+        val accounts = localAccounts.map { account ->
+            val transactionDelta = accountDeltaById[account.id] ?: 0L
+            toAccountDto(account).copy(
+                balanceFen = account.balanceFen - transactionDelta,
+            )
+        }
+        val transactions = localTransactions.map(::toTransactionDto)
         return SyncPushRequest(
             createAccounts = accounts,
             createCategories = categories,
@@ -503,4 +522,7 @@ class SyncRepository @Inject constructor(
         val accountId: Long?,
         val accountName: String?,
     )
+
+    private fun signedAmount(type: RecordType, amountFen: Long): Long =
+        if (type == RecordType.INCOME) amountFen else -amountFen
 }
