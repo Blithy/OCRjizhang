@@ -37,6 +37,9 @@ class MainActivity : AppCompatActivity() {
         R.id.loginFragment,
         R.id.registerFragment,
         R.id.homeFragment,
+        R.id.assetFragment,
+        R.id.statisticsFragment,
+        R.id.profileFragment,
         R.id.transactionEditorFragment,
     )
 

@@ -19,9 +19,19 @@
             android:paddingEnd="16dp"
             android:paddingBottom="110dp">
 
+        <TextView
+            android:id="@+id/pageTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/page_assets"
+            android:textColor="@color/ink_primary"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             app:cardBackgroundColor="@color/primary_brand"
             app:cardCornerRadius="28dp"
             app:cardElevation="0dp">

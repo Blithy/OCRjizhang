@@ -10,89 +10,157 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp">
 
-        <com.google.android.material.card.MaterialCardView
+        <TextView
+            android:id="@+id/pageTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/surface_tint_soft"
-            app:cardCornerRadius="26dp"
-            app:cardElevation="0dp">
+            android:text="@string/page_statistics"
+            android:textColor="@color/ink_primary"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/periodChipGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_gravity="center_horizontal"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/weekChip"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/statistics_week" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/monthChip"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:checked="true"
+                android:text="@string/statistics_month" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/yearChip"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/statistics_year" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/allChip"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/statistics_all" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/customChip"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/statistics_custom_range" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/previousRangeButton"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_statistics_nav_button"
+                android:contentDescription="@string/statistics_previous_range"
+                android:padding="7dp"
+                android:scaleX="-1"
+                android:src="@drawable/ic_chevron_right_20"
+                app:tint="@color/primary_brand_dark" />
+
+            <TextView
+                android:id="@+id/rangeLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:textColor="@color/ink_secondary"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:id="@+id/rangeEndpointGroup"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="22dp">
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:visibility="gone">
 
                 <TextView
-                    android:layout_width="match_parent"
+                    android:id="@+id/rangeStartLabel"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/statistics_headline"
-                    android:textColor="@color/ink_primary"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:lineSpacingExtra="2dp"
-                    android:text="@string/statistics_headline_subtitle"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="4dp"
                     android:textColor="@color/ink_secondary"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/rangeLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:textColor="@color/primary_brand_dark"
-                    android:textSize="14sp"
+                    android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/periodChipGroup"
+                <TextView
+                    android:id="@+id/rangeSplitLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    app:selectionRequired="true"
-                    app:singleSelection="true">
+                    android:layout_marginHorizontal="6dp"
+                    android:text="~"
+                    android:textColor="@color/ink_secondary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/dayChip"
-                        style="@style/Widget.Material3.Chip.Assist"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/statistics_day" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/weekChip"
-                        style="@style/Widget.Material3.Chip.Assist"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:text="@string/statistics_week" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/monthChip"
-                        style="@style/Widget.Material3.Chip.Assist"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checkable="true"
-                        android:checked="true"
-                        android:text="@string/statistics_month" />
-                </com.google.android.material.chip.ChipGroup>
+                <TextView
+                    android:id="@+id/rangeEndLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="4dp"
+                    android:textColor="@color/ink_secondary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+
+            <ImageButton
+                android:id="@+id/nextRangeButton"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_statistics_nav_button"
+                android:contentDescription="@string/statistics_next_range"
+                android:padding="7dp"
+                android:src="@drawable/ic_chevron_right_20"
+                app:tint="@color/primary_brand_dark" />
+        </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             app:cardBackgroundColor="@color/surface_container"
-            app:cardCornerRadius="24dp"
+            app:cardCornerRadius="22dp"
             app:cardElevation="0dp"
             app:strokeColor="@color/outline_soft"
             app:strokeWidth="1dp">
@@ -101,64 +169,108 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:padding="14dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/statistics_overview_title"
-                    android:textColor="@color/ink_secondary"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/incomeValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:textColor="@color/positive"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/expenseValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textColor="@color/negative"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/surplusValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:text="@string/statistics_income_overview"
                     android:textColor="@color/ink_primary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <LinearLayout
-                    android:id="@+id/overviewEmptyGroup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:orientation="vertical">
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/emptyTitle"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/transaction_type_expense"
+                        android:textColor="@color/ink_secondary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/transaction_type_income"
+                        android:textColor="@color/ink_secondary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/expenseValue"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:textColor="@color/ink_primary"
-                        android:textSize="15sp"
+                        android:textSize="26sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/emptyBody"
-                        android:layout_width="match_parent"
+                        android:id="@+id/incomeValue"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
+                        android:layout_weight="1"
+                        android:textColor="@color/ink_primary"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/statistics_surplus"
                         android:textColor="@color/ink_secondary"
-                        android:textSize="14sp" />
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/statistics_avg_expense"
+                        android:textColor="@color/ink_secondary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/surplusValue"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/ink_primary"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/averageExpenseValue"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/ink_primary"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -166,9 +278,9 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="10dp"
             app:cardBackgroundColor="@color/surface_container"
-            app:cardCornerRadius="24dp"
+            app:cardCornerRadius="22dp"
             app:cardElevation="0dp"
             app:strokeColor="@color/outline_soft"
             app:strokeWidth="1dp">
@@ -177,7 +289,57 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/statistics_expense_chart_title"
+                    android:textColor="@color/ink_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/expenseChartAverageText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/ink_secondary"
+                    android:textSize="13sp" />
+
+                <com.github.mikephil.charting.charts.BarChart
+                    android:id="@+id/expenseTrendChart"
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp"
+                    android:layout_marginTop="8dp" />
+
+                <TextView
+                    android:id="@+id/trendEmptyText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:textColor="@color/ink_secondary"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:cardBackgroundColor="@color/surface_container"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/outline_soft"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -187,25 +349,17 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/statistics_category_subtitle"
-                    android:textColor="@color/ink_secondary"
-                    android:textSize="14sp" />
-
                 <com.github.mikephil.charting.charts.PieChart
                     android:id="@+id/categoryChart"
                     android:layout_width="match_parent"
-                    android:layout_height="260dp"
-                    android:layout_marginTop="16dp" />
+                    android:layout_height="250dp"
+                    android:layout_marginTop="8dp" />
 
                 <TextView
                     android:id="@+id/categoryEmptyText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="8dp"
                     android:gravity="center"
                     android:textColor="@color/ink_secondary"
                     android:textSize="14sp"
@@ -215,7 +369,6 @@
                     android:id="@+id/categoryBreakdownContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
                     android:orientation="vertical" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -223,10 +376,9 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="20dp"
+            android:layout_marginTop="10dp"
             app:cardBackgroundColor="@color/surface_container"
-            app:cardCornerRadius="24dp"
+            app:cardCornerRadius="22dp"
             app:cardElevation="0dp"
             app:strokeColor="@color/outline_soft"
             app:strokeWidth="1dp">
@@ -235,41 +387,57 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:padding="14dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/statistics_trend_title"
+                    android:text="@string/statistics_asset_trend_title"
                     android:textColor="@color/ink_primary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
+                <com.github.mikephil.charting.charts.LineChart
+                    android:id="@+id/assetTrendChart"
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp"
+                    android:layout_marginTop="8dp" />
+
                 <TextView
+                    android:id="@+id/assetTrendEmptyText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="@string/statistics_trend_subtitle"
-                    android:textColor="@color/ink_secondary"
-                    android:textSize="14sp" />
-
-                <com.github.mikephil.charting.charts.BarChart
-                    android:id="@+id/trendChart"
-                    android:layout_width="match_parent"
-                    android:layout_height="280dp"
-                    android:layout_marginTop="16dp" />
-
-                <TextView
-                    android:id="@+id/trendEmptyText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
                     android:gravity="center"
                     android:textColor="@color/ink_secondary"
                     android:textSize="14sp"
                     android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+            android:id="@+id/overviewEmptyGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/emptyTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ink_primary"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/emptyBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/ink_secondary"
+                android:textSize="14sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

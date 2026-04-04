@@ -1,9 +1,11 @@
 package com.example.ocrjizhang.data.model
 
 enum class StatisticsPeriod {
-    DAY,
     WEEK,
     MONTH,
+    YEAR,
+    ALL,
+    CUSTOM,
 }
 
 data class StatisticsRange(
@@ -13,8 +15,13 @@ data class StatisticsRange(
 )
 
 data class StatisticsSummary(
-    val incomeFen: Long,
-    val expenseFen: Long,
+    val incomeFen: Long = 0L,
+    val expenseFen: Long = 0L,
+    val averageDailyExpenseFen: Long = 0L,
+    val pendingReimburseFen: Long = 0L,
+    val reimbursedInFen: Long = 0L,
+    val repaymentFen: Long = 0L,
+    val collectionFen: Long = 0L,
 ) {
     val surplusFen: Long
         get() = incomeFen - expenseFen

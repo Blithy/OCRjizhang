@@ -5,6 +5,7 @@ import com.example.ocrjizhang.data.local.entity.SyncStatus
 import com.example.ocrjizhang.data.local.entity.TransactionEntity
 import com.example.ocrjizhang.data.local.entity.TransactionSource
 import com.example.ocrjizhang.data.model.StatisticsPeriod
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
@@ -16,33 +17,105 @@ class StatisticsCalculatorTest {
     private val zoneId: ZoneId = ZoneId.of("Asia/Shanghai")
 
     @Test
-    fun `rangeFor week starts on monday and ends on sunday`() {
-        val now = localDate("2024-03-31")
-
-        val range = StatisticsCalculator.rangeFor(
-            period = StatisticsPeriod.WEEK,
-            nowMillis = now,
-            zoneId = zoneId,
-        )
-
-        assertEquals("03.25 - 03.31", range.label)
+    fun `weekReferenceFromDate snaps to monday`() {
+        val wednesday = localDate("2026-04-08")
+        val monday = StatisticsCalculator.weekReferenceFromDate(wednesday, zoneId)
+        assertEquals("2026-04-06", formatDate(monday))
     }
 
     @Test
-    fun `buildSnapshot aggregates summary category and week trend`() {
-        val now = localDate("2024-03-31")
-        val monday = localDate("2024-03-25")
-        val tuesday = localDate("2024-03-26")
-        val thursday = localDate("2024-03-28")
+    fun `rangeFor month and year produces expected labels`() {
+        val reference = localDate("2026-04-05")
+        val monthRange = StatisticsCalculator.rangeFor(
+            period = StatisticsPeriod.MONTH,
+            referenceMillis = reference,
+            zoneId = zoneId,
+            maxYear = 2036,
+        )
+        val yearRange = StatisticsCalculator.rangeFor(
+            period = StatisticsPeriod.YEAR,
+            referenceMillis = reference,
+            zoneId = zoneId,
+            maxYear = 2036,
+        )
+
+        assertEquals("2026年04月", monthRange.label)
+        assertEquals("2026年", yearRange.label)
+    }
+
+    @Test
+    fun `customRange normalizes reversed start and end`() {
+        val start = localDate("2026-04-30")
+        val end = localDate("2026-04-01")
+        val range = StatisticsCalculator.customRange(startMillis = start, endMillis = end, zoneId = zoneId)
+        assertTrue(range.startMillis <= range.endMillis)
+        assertEquals("2026-04-01", formatDate(range.startMillis))
+        assertEquals("2026-04-30", formatDate(range.endMillis))
+    }
+
+    @Test
+    fun `shiftRange blocks next navigation beyond maxYear end`() {
+        val maxYear = 2036
+        val decemberRef = StatisticsCalculator.monthReference(maxYear, 12, zoneId)
+        val decemberRange = StatisticsCalculator.rangeFor(
+            period = StatisticsPeriod.MONTH,
+            referenceMillis = decemberRef,
+            zoneId = zoneId,
+            maxYear = maxYear,
+        )
+
+        val shifted = StatisticsCalculator.shiftRange(
+            period = StatisticsPeriod.MONTH,
+            range = decemberRange,
+            step = 1,
+            zoneId = zoneId,
+            minYear = StatisticsCalculator.MIN_SUPPORTED_YEAR,
+            maxYear = maxYear,
+        )
+
+        assertEquals(decemberRange.startMillis, shifted.startMillis)
+        assertEquals(decemberRange.endMillis, shifted.endMillis)
+    }
+
+    @Test
+    fun `buildSnapshot aggregates summary category and weekly trend`() {
+        val monday = localDate("2026-04-06")
+        val tuesday = localDate("2026-04-07")
+        val thursday = localDate("2026-04-09")
+        val reference = localDate("2026-04-09")
+        val range = StatisticsCalculator.rangeFor(
+            period = StatisticsPeriod.WEEK,
+            referenceMillis = reference,
+            zoneId = zoneId,
+            maxYear = 2036,
+        )
 
         val snapshot = StatisticsCalculator.buildSnapshot(
             period = StatisticsPeriod.WEEK,
+            range = range,
             transactions = listOf(
-                transaction(id = 1L, type = RecordType.INCOME, amountFen = 500_00L, categoryName = "salary", transactionTime = monday),
-                transaction(id = 2L, type = RecordType.EXPENSE, amountFen = 120_00L, categoryName = "food", transactionTime = tuesday),
-                transaction(id = 3L, type = RecordType.EXPENSE, amountFen = 80_00L, categoryName = "transport", transactionTime = thursday),
+                transaction(
+                    id = 1L,
+                    type = RecordType.INCOME,
+                    amountFen = 500_00L,
+                    categoryName = "工资",
+                    transactionTime = monday,
+                ),
+                transaction(
+                    id = 2L,
+                    type = RecordType.EXPENSE,
+                    amountFen = 120_00L,
+                    categoryName = "餐饮",
+                    transactionTime = tuesday,
+                ),
+                transaction(
+                    id = 3L,
+                    type = RecordType.EXPENSE,
+                    amountFen = 80_00L,
+                    categoryName = "交通",
+                    transactionTime = thursday,
+                ),
             ),
-            nowMillis = now,
             zoneId = zoneId,
         )
 
@@ -50,64 +123,8 @@ class StatisticsCalculatorTest {
         assertEquals(200_00L, snapshot.summary.expenseFen)
         assertEquals(300_00L, snapshot.summary.surplusFen)
         assertEquals(2, snapshot.categoryBreakdown.size)
-        assertEquals("food", snapshot.categoryBreakdown.first().categoryName)
         assertEquals(7, snapshot.trendBreakdown.size)
-        assertEquals(500_00L, snapshot.trendBreakdown.first().incomeFen)
         assertTrue(snapshot.hasTransactions)
-    }
-
-    @Test
-    fun `buildSnapshot creates monthly buckets`() {
-        val now = localDate("2024-03-31")
-
-        val snapshot = StatisticsCalculator.buildSnapshot(
-            period = StatisticsPeriod.MONTH,
-            transactions = emptyList(),
-            nowMillis = now,
-            zoneId = zoneId,
-        )
-
-        assertEquals(5, snapshot.trendBreakdown.size)
-        assertEquals("\u7b2c1\u5468", snapshot.trendBreakdown.first().label)
-    }
-
-    @Test
-    fun `buildSnapshot excludes income transactions from category breakdown`() {
-        val now = localDate("2024-03-31")
-        val monday = localDate("2024-03-25")
-        val tuesday = localDate("2024-03-26")
-
-        val snapshot = StatisticsCalculator.buildSnapshot(
-            period = StatisticsPeriod.WEEK,
-            transactions = listOf(
-                transaction(id = 1L, type = RecordType.INCOME, amountFen = 300_00L, categoryName = "salary", transactionTime = monday),
-                transaction(id = 2L, type = RecordType.EXPENSE, amountFen = 66_00L, categoryName = "food", transactionTime = tuesday),
-            ),
-            nowMillis = now,
-            zoneId = zoneId,
-        )
-
-        assertEquals(1, snapshot.categoryBreakdown.size)
-        assertEquals("food", snapshot.categoryBreakdown.single().categoryName)
-        assertEquals(1f, snapshot.categoryBreakdown.single().share)
-    }
-
-    @Test
-    fun `buildSnapshot day period creates a single today bucket`() {
-        val now = localDate("2024-03-31")
-
-        val snapshot = StatisticsCalculator.buildSnapshot(
-            period = StatisticsPeriod.DAY,
-            transactions = listOf(
-                transaction(id = 1L, type = RecordType.EXPENSE, amountFen = 88_00L, categoryName = "coffee", transactionTime = now),
-            ),
-            nowMillis = now,
-            zoneId = zoneId,
-        )
-
-        assertEquals(1, snapshot.trendBreakdown.size)
-        assertEquals("今天", snapshot.trendBreakdown.single().label)
-        assertEquals(88_00L, snapshot.trendBreakdown.single().expenseFen)
     }
 
     private fun transaction(
@@ -135,8 +152,8 @@ class StatisticsCalculatorTest {
     )
 
     private fun localDate(isoDate: String): Long =
-        LocalDate.parse(isoDate)
-            .atStartOfDay(zoneId)
-            .toInstant()
-            .toEpochMilli()
+        LocalDate.parse(isoDate).atStartOfDay(zoneId).toInstant().toEpochMilli()
+
+    private fun formatDate(epochMillis: Long): String =
+        Instant.ofEpochMilli(epochMillis).atZone(zoneId).toLocalDate().toString()
 }

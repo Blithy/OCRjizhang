@@ -2,6 +2,7 @@ package com.example.ocrjizhang.data.repository
 
 import com.example.ocrjizhang.data.local.dao.TransactionDao
 import com.example.ocrjizhang.data.model.StatisticsPeriod
+import com.example.ocrjizhang.data.model.StatisticsRange
 import com.example.ocrjizhang.data.model.StatisticsSnapshot
 import com.example.ocrjizhang.utils.StatisticsCalculator
 import javax.inject.Inject
@@ -17,9 +18,8 @@ class StatisticsRepository @Inject constructor(
     fun observeStatistics(
         userId: Long,
         period: StatisticsPeriod,
-        nowMillis: Long = System.currentTimeMillis(),
+        range: StatisticsRange,
     ): Flow<StatisticsSnapshot> {
-        val range = StatisticsCalculator.rangeFor(period, nowMillis)
         return transactionDao.observeTransactionsBetween(
             userId = userId,
             startTime = range.startMillis,
@@ -27,8 +27,8 @@ class StatisticsRepository @Inject constructor(
         ).map { transactions ->
             StatisticsCalculator.buildSnapshot(
                 period = period,
+                range = range,
                 transactions = transactions,
-                nowMillis = nowMillis,
             )
         }
     }
