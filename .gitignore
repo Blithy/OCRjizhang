@@ -31,3 +31,11 @@ google-services.json
 /ch_PP-OCRv3_rec_infer.nb
 /ch_ppocr_mobile_v2.0_cls_infer_opt.nb
 /third_party_downloads/
+
+# Local debug / dump artifacts
+/.gradle-user/
+/tmp-*.xml
+/tmp-*.log
+/tmp-device-db/
+/tmp-stat-dumps/
+/OcrTestPicture.PNG
