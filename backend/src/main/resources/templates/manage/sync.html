@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{manage/fragments :: head(${pageTitle})}"></head>
+<body class="manage-page">
+<div class="manage-root">
+    <aside th:replace="~{manage/fragments :: sidebar(${activeNav}, ${currentUserName}, ${currentUsername}, ${currentToken})}"></aside>
+
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">同步状态</p>
+                <h2>查看 App 与后端对账关键面</h2>
+                <p class="intro">这个页面用于答辩时解释前后端如何同步，重点展示接口地址、会话 Token、聚合数量和最近回写数据。</p>
+            </div>
+        </header>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <p class="label">账户总数</p>
+                <strong th:text="${accountCount}">0</strong>
+            </article>
+            <article class="stat-card">
+                <p class="label">分类总数</p>
+                <strong th:text="${categoryCount}">0</strong>
+            </article>
+            <article class="stat-card">
+                <p class="label">交易总数</p>
+                <strong th:text="${transactionCount}">0</strong>
+            </article>
+            <article class="stat-card">
+                <p class="label">账户余额总和</p>
+                <strong th:text="${@manageFormat.money(totalBalanceFen)}">￥0.00</strong>
+                <span th:text="'最近数据更新时间：' + ${@manageFormat.dateTime(latestUpdatedAt)}">最近数据更新时间：-</span>
+            </article>
+        </section>
+
+        <section class="two-column-layout">
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>联调信息</h3>
+                        <p>这里集中展示浏览器会话正在使用的后端同步参数。</p>
+                    </div>
+                </div>
+
+                <div class="kv-list">
+                    <div>
+                        <span>接口基址</span>
+                        <code>http://本机IP:8080/api/</code>
+                    </div>
+                    <div>
+                        <span>拉取接口</span>
+                        <code>POST /api/sync/pull</code>
+                    </div>
+                    <div>
+                        <span>推送接口</span>
+                        <code>POST /api/sync/push</code>
+                    </div>
+                    <div>
+                        <span>当前 Token</span>
+                        <code th:text="${currentToken}">demo-token</code>
+                    </div>
+                    <div>
+                        <span>最近交易时间</span>
+                        <strong th:text="${latestTransaction != null ? @manageFormat.dateTime(latestTransaction.transactionTime) : '-'}">-</strong>
+                    </div>
+                    <div>
+                        <span>后端 pull 时间</span>
+                        <strong th:text="${@manageFormat.dateTime(syncPayload.serverTime)}">-</strong>
+                    </div>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>最近账户与分类</h3>
+                        <p>确认默认账户和分类字典是否已经成功回写。</p>
+                    </div>
+                </div>
+
+                <div class="mini-list">
+                    <div class="mini-block">
+                        <h4>账户</h4>
+                        <div th:if="${recentAccounts.isEmpty()}" class="subtle">暂无账户数据</div>
+                        <div th:each="account : ${recentAccounts}" class="mini-row">
+                            <strong th:text="${account.name}">微信</strong>
+                            <span th:text="${@manageFormat.money(account.balanceFen)}">￥0.00</span>
+                        </div>
+                    </div>
+                    <div class="mini-block">
+                        <h4>分类</h4>
+                        <div th:if="${recentCategories.isEmpty()}" class="subtle">暂无分类数据</div>
+                        <div th:each="category : ${recentCategories}" class="mini-row">
+                            <strong th:text="${category.name}">餐饮</strong>
+                            <span th:text="${category.type == 'INCOME'} ? '收入' : '支出'">支出</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <h3>最近同步数据</h3>
+                    <p>这里展示最近 8 条交易，便于和 App 真机页面逐条核对。</p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>金额</th>
+                        <th>分类</th>
+                        <th>账户</th>
+                        <th>来源</th>
+                        <th>备注</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${recentTransactions.isEmpty()}">
+                        <td colspan="6" class="empty-cell">当前还没有交易同步数据。</td>
+                    </tr>
+                    <tr th:each="transaction : ${recentTransactions}">
+                        <td th:text="${@manageFormat.dateTime(transaction.transactionTime)}">2026-04-07 19:00</td>
+                        <td th:text="${@manageFormat.money(transaction.amountFen)}">￥0.00</td>
+                        <td th:text="${transaction.categoryName}">餐饮</td>
+                        <td th:text="${transaction.accountName ?: '未绑定'}">微信</td>
+                        <td th:text="${transaction.source}">MANUAL</td>
+                        <td th:text="${transaction.remark ?: '-'}">备注</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

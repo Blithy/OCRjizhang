@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{manage/fragments :: head(${pageTitle})}"></head>
+<body class="manage-page">
+<div class="manage-root">
+    <aside th:replace="~{manage/fragments :: sidebar(${activeNav}, ${currentUserName}, ${currentUsername}, ${currentToken})}"></aside>
+
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">账户管理</p>
+                <h2>维护资金账户与余额</h2>
+                <p class="intro">这里的改动会直接影响同步后的资产展示和交易归属，适合在答辩前快速校对账户状态。</p>
+            </div>
+        </header>
+
+        <div th:replace="~{manage/fragments :: flash(${successMessage}, ${errorMessage})}"></div>
+
+        <section class="two-column-layout">
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>账户列表</h3>
+                        <p>默认账户会优先排在前面，余额单位为元。</p>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>标记</th>
+                            <th>余额</th>
+                            <th>最近更新</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${accounts.isEmpty()}">
+                            <td colspan="5" class="empty-cell">当前没有账户，右侧可直接新增一个演示账户。</td>
+                        </tr>
+                        <tr th:each="account : ${accounts}">
+                            <td>
+                                <strong th:text="${account.name}">微信</strong>
+                                <div class="subtle" th:text="${account.symbol ?: '未设置简称'}">微</div>
+                            </td>
+                            <td th:text="${account.default} ? '默认账户' : '自定义账户'">默认账户</td>
+                            <td th:text="${@manageFormat.money(account.balanceFen)}">￥0.00</td>
+                            <td th:text="${@manageFormat.dateTime(account.updatedAt)}">2026-04-07 19:00</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a class="text-link" th:href="@{/manage/accounts(editId=${account.id})}">编辑</a>
+                                    <form th:action="@{/manage/accounts/delete}" method="post">
+                                        <input type="hidden" name="id" th:value="${account.id}">
+                                        <button class="text-link danger" type="submit">删除</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3 th:text="${editingAccountId != null} ? '编辑账户' : '新增账户'">新增账户</h3>
+                        <p>支持修改名称、简称和余额，适合快速准备答辩数据。</p>
+                    </div>
+                    <a class="button button-secondary" th:if="${editingAccountId != null}" th:href="@{/manage/accounts}">新建模式</a>
+                </div>
+
+                <form th:action="@{/manage/accounts/save}" th:object="${accountForm}" method="post" class="form-stack">
+                    <input type="hidden" th:field="*{id}">
+
+                    <div class="form-grid">
+                        <label class="field">
+                            <span>账户名称</span>
+                            <input type="text" th:field="*{name}" placeholder="例如：微信">
+                        </label>
+                        <label class="field">
+                            <span>简称 / 符号</span>
+                            <input type="text" th:field="*{symbol}" placeholder="例如：微">
+                        </label>
+                    </div>
+
+                    <label class="field">
+                        <span>余额（元）</span>
+                        <input type="text" th:field="*{balanceYuan}" placeholder="0.00">
+                    </label>
+
+                    <label class="checkbox-field">
+                        <input type="checkbox" th:field="*{defaultAccount}">
+                        <span>设为默认账户</span>
+                    </label>
+
+                    <button class="button" type="submit" th:text="${editingAccountId != null} ? '保存账户' : '创建账户'">创建账户</button>
+                </form>
+            </article>
+        </section>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{manage/fragments :: head('后台登录')}"></head>
+<body class="login-page">
+<main class="login-shell">
+    <section class="login-card">
+        <p class="eyebrow">H13 / Web 管理面板</p>
+        <h1>登录本地演示后台</h1>
+        <p class="intro">这个页面只服务于本机答辩演示和联调排障，账号直接复用 App 后端里的用户数据。</p>
+
+        <div th:replace="~{manage/fragments :: flash(${successMessage}, ${errorMessage})}"></div>
+
+        <form th:action="@{/manage/login}" th:object="${loginForm}" method="post" class="form-stack">
+            <label class="field">
+                <span>用户名</span>
+                <input type="text" th:field="*{username}" placeholder="demo" autocomplete="username">
+            </label>
+            <label class="field">
+                <span>密码</span>
+                <input type="password" th:field="*{password}" placeholder="123456" autocomplete="current-password">
+            </label>
+
+            <button class="button" type="submit">进入管理面板</button>
+        </form>
+
+        <div class="login-tip">
+            <strong>默认演示账号</strong>
+            <span>`demo / 123456`</span>
+        </div>
+    </section>
+</main>
+</body>
+</html>

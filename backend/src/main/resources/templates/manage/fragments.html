@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title + ' - 小记OCR记账后台'}">小记OCR记账后台</title>
+    <link rel="stylesheet" th:href="@{/manage/manage.css}">
+</head>
+<body>
+<aside th:fragment="sidebar(activeNav, currentUserName, currentUsername, currentToken)" class="sidebar">
+    <div class="brand-block">
+        <p class="brand-kicker">H13 后端演示面板</p>
+        <h1>小记OCR记账</h1>
+        <p class="brand-copy">浏览器侧查看与维护演示数据，便于答辩时对账和排障。</p>
+    </div>
+
+    <div class="profile-card">
+        <div class="profile-avatar" th:text="${#strings.substring(currentUserName, 0, 1)}">演</div>
+        <div class="profile-copy">
+            <strong th:text="${currentUserName}">本机演示用户</strong>
+            <span th:text="${currentUsername}">demo</span>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a th:href="@{/manage/dashboard}" th:classappend="${activeNav == 'dashboard'} ? ' active'">总览</a>
+        <a th:href="@{/manage/accounts}" th:classappend="${activeNav == 'accounts'} ? ' active'">账户</a>
+        <a th:href="@{/manage/categories}" th:classappend="${activeNav == 'categories'} ? ' active'">分类</a>
+        <a th:href="@{/manage/transactions}" th:classappend="${activeNav == 'transactions'} ? ' active'">交易</a>
+        <a th:href="@{/manage/sync}" th:classappend="${activeNav == 'sync'} ? ' active'">同步状态</a>
+    </nav>
+
+    <section class="token-card">
+        <p class="label">当前 Token</p>
+        <code th:text="${currentToken}">demo-token</code>
+        <p class="hint">App 侧联调时可直接对照这个浏览器会话对应的用户。</p>
+    </section>
+
+    <form th:action="@{/manage/logout}" method="post">
+        <button class="button button-secondary button-block" type="submit">退出后台</button>
+    </form>
+</aside>
+
+<div th:fragment="flash(successMessage, errorMessage)" class="flash-stack" th:if="${successMessage != null or errorMessage != null}">
+    <div class="flash flash-success" th:if="${successMessage != null}" th:text="${successMessage}">操作成功</div>
+    <div class="flash flash-error" th:if="${errorMessage != null}" th:text="${errorMessage}">操作失败</div>
+</div>
+</body>
+</html>

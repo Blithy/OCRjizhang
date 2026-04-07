@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{manage/fragments :: head(${pageTitle})}"></head>
+<body class="manage-page">
+<div class="manage-root">
+    <aside th:replace="~{manage/fragments :: sidebar(${activeNav}, ${currentUserName}, ${currentUsername}, ${currentToken})}"></aside>
+
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">分类管理</p>
+                <h2>维护收入与支出分类字典</h2>
+                <p class="intro">这里的分类会被 App 记账面板和统计页复用，适合演示前快速补齐分类名称、图标和颜色。</p>
+            </div>
+        </header>
+
+        <div th:replace="~{manage/fragments :: flash(${successMessage}, ${errorMessage})}"></div>
+
+        <section class="two-column-layout">
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>分类列表</h3>
+                        <p>收入与支出分类统一维护，默认分类会排在前面。</p>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>类型</th>
+                            <th>图标</th>
+                            <th>颜色</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${categories.isEmpty()}">
+                            <td colspan="5" class="empty-cell">当前没有分类，右侧可直接新增一个用于演示的分类。</td>
+                        </tr>
+                        <tr th:each="category : ${categories}">
+                            <td>
+                                <strong th:text="${category.name}">餐饮</strong>
+                                <div class="subtle" th:text="${category.default} ? '默认分类' : '自定义分类'">默认分类</div>
+                            </td>
+                            <td th:text="${category.type == 'INCOME'} ? '收入' : '支出'">支出</td>
+                            <td th:text="${category.icon ?: '-'}">restaurant</td>
+                            <td>
+                                <span class="color-chip" th:style="'background:' + (${category.color ?: '#E86F51'})"></span>
+                                <span th:text="${category.color ?: '-'}">#E86F51</span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a class="text-link" th:href="@{/manage/categories(editId=${category.id})}">编辑</a>
+                                    <form th:action="@{/manage/categories/delete}" method="post">
+                                        <input type="hidden" name="id" th:value="${category.id}">
+                                        <button class="text-link danger" type="submit">删除</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3 th:text="${editingCategoryId != null} ? '编辑分类' : '新增分类'">新增分类</h3>
+                        <p>图标和颜色只是演示级字段，但可以帮助你快速核对 App 侧分类语义是否一致。</p>
+                    </div>
+                    <a class="button button-secondary" th:if="${editingCategoryId != null}" th:href="@{/manage/categories}">新建模式</a>
+                </div>
+
+                <form th:action="@{/manage/categories/save}" th:object="${categoryForm}" method="post" class="form-stack">
+                    <input type="hidden" th:field="*{id}">
+
+                    <div class="form-grid">
+                        <label class="field">
+                            <span>分类名称</span>
+                            <input type="text" th:field="*{name}" placeholder="例如：餐饮">
+                        </label>
+                        <label class="field">
+                            <span>分类类型</span>
+                            <select th:field="*{type}">
+                                <option value="EXPENSE">支出</option>
+                                <option value="INCOME">收入</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="form-grid">
+                        <label class="field">
+                            <span>图标标识</span>
+                            <input type="text" th:field="*{icon}" placeholder="例如：restaurant">
+                        </label>
+                        <label class="field">
+                            <span>主题色</span>
+                            <input type="text" th:field="*{color}" placeholder="#E86F51">
+                        </label>
+                    </div>
+
+                    <label class="checkbox-field">
+                        <input type="checkbox" th:field="*{defaultCategory}">
+                        <span>设为默认分类</span>
+                    </label>
+
+                    <button class="button" type="submit" th:text="${editingCategoryId != null} ? '保存分类' : '创建分类'">创建分类</button>
+                </form>
+            </article>
+        </section>
+    </main>
+</div>
+</body>
+</html>

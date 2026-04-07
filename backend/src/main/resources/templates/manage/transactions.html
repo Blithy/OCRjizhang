@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{manage/fragments :: head(${pageTitle})}"></head>
+<body class="manage-page">
+<div class="manage-root">
+    <aside th:replace="~{manage/fragments :: sidebar(${activeNav}, ${currentUserName}, ${currentUsername}, ${currentToken})}"></aside>
+
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">交易管理</p>
+                <h2>浏览器侧直接维护账本记录</h2>
+                <p class="intro">这里能直接新增、编辑和删除交易，适合在演示前修正数据，或配合同步页面做对账说明。</p>
+            </div>
+        </header>
+
+        <div th:replace="~{manage/fragments :: flash(${successMessage}, ${errorMessage})}"></div>
+
+        <section class="two-column-layout">
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>交易列表</h3>
+                        <p>按时间倒序展示，金额单位为元。</p>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>类型</th>
+                            <th>金额</th>
+                            <th>分类</th>
+                            <th>账户</th>
+                            <th>来源</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${transactions.isEmpty()}">
+                            <td colspan="7" class="empty-cell">当前没有交易，右侧可直接补一条演示数据。</td>
+                        </tr>
+                        <tr th:each="transaction : ${transactions}">
+                            <td th:text="${@manageFormat.dateTime(transaction.transactionTime)}">2026-04-07 19:00</td>
+                            <td>
+                                <span class="pill" th:classappend="${transaction.type == 'INCOME'} ? ' income' : ' expense'" th:text="${transaction.type == 'INCOME'} ? '收入' : '支出'">支出</span>
+                            </td>
+                            <td th:text="${@manageFormat.money(transaction.amountFen)}">￥0.00</td>
+                            <td>
+                                <strong th:text="${transaction.categoryName}">餐饮</strong>
+                                <div class="subtle" th:text="${transaction.merchantName ?: '-'}">鹿角巷</div>
+                            </td>
+                            <td th:text="${transaction.accountName ?: '未绑定'}">微信</td>
+                            <td th:text="${transaction.source}">MANUAL</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a class="text-link" th:href="@{/manage/transactions(editId=${transaction.id})}">编辑</a>
+                                    <form th:action="@{/manage/transactions/delete}" method="post">
+                                        <input type="hidden" name="id" th:value="${transaction.id}">
+                                        <button class="text-link danger" type="submit">删除</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h3 th:text="${editingTransactionId != null} ? '编辑交易' : '新增交易'">新增交易</h3>
+                        <p>分类必须与交易类型一致，账户为空时表示这笔记录不回写任何资金账户。</p>
+                    </div>
+                    <a class="button button-secondary" th:if="${editingTransactionId != null}" th:href="@{/manage/transactions}">新建模式</a>
+                </div>
+
+                <form th:action="@{/manage/transactions/save}" th:object="${transactionForm}" method="post" class="form-stack">
+                    <input type="hidden" th:field="*{id}">
+
+                    <div class="form-grid">
+                        <label class="field">
+                            <span>交易类型</span>
+                            <select th:field="*{type}">
+                                <option value="EXPENSE">支出</option>
+                                <option value="INCOME">收入</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>金额（元）</span>
+                            <input type="text" th:field="*{amountYuan}" placeholder="0.00">
+                        </label>
+                    </div>
+
+                    <div class="form-grid">
+                        <label class="field">
+                            <span>资金账户</span>
+                            <select th:field="*{accountId}">
+                                <option value="">未绑定账户</option>
+                                <option th:each="account : ${accounts}" th:value="${account.id}" th:text="${account.name}">微信</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>分类</span>
+                            <select th:field="*{categoryId}">
+                                <option value="">请选择分类</option>
+                                <optgroup label="支出分类">
+                                    <option th:each="category : ${expenseCategories}" th:value="${category.id}" th:text="${category.name}">餐饮</option>
+                                </optgroup>
+                                <optgroup label="收入分类">
+                                    <option th:each="category : ${incomeCategories}" th:value="${category.id}" th:text="${category.name}">工资</option>
+                                </optgroup>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="form-grid">
+                        <label class="field">
+                            <span>商户名称</span>
+                            <input type="text" th:field="*{merchantName}" placeholder="例如：鹿角巷">
+                        </label>
+                        <label class="field">
+                            <span>交易来源</span>
+                            <select th:field="*{source}">
+                                <option value="MANUAL">MANUAL</option>
+                                <option value="OCR">OCR</option>
+                                <option value="SYNC">SYNC</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <label class="field">
+                        <span>交易时间</span>
+                        <input type="datetime-local" th:field="*{transactionAt}">
+                    </label>
+
+                    <label class="field">
+                        <span>备注</span>
+                        <input type="text" th:field="*{remark}" placeholder="例如：答辩演示样例">
+                    </label>
+
+                    <button class="button" type="submit" th:text="${editingTransactionId != null} ? '保存交易' : '创建交易'">创建交易</button>
+                </form>
+            </article>
+        </section>
+    </main>
+</div>
+</body>
+</html>

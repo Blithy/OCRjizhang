@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{manage/fragments :: head(${pageTitle})}"></head>
+<body class="manage-page">
+<div class="manage-root">
+    <aside th:replace="~{manage/fragments :: sidebar(${activeNav}, ${currentUserName}, ${currentUsername}, ${currentToken})}"></aside>
+
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">管理总览</p>
+                <h2>演示数据一眼看清</h2>
+                <p class="intro">这里汇总当前浏览器会话对应用户的账户、分类、交易与最近变更，适合答辩时快速对账。</p>
+            </div>
+        </header>
+
+        <div th:replace="~{manage/fragments :: flash(${successMessage}, ${errorMessage})}"></div>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <p class="label">账户数量</p>
+                <strong th:text="${accountCount}">0</strong>
+            </article>
+            <article class="stat-card">
+                <p class="label">分类数量</p>
+                <strong th:text="${categoryCount}">0</strong>
+            </article>
+            <article class="stat-card">
+                <p class="label">交易数量</p>
+                <strong th:text="${transactionCount}">0</strong>
+            </article>
+            <article class="stat-card">
+                <p class="label">当前总资产</p>
+                <strong th:text="${@manageFormat.money(totalBalanceFen)}">￥0.00</strong>
+                <span th:text="'最近更新：' + ${@manageFormat.dateTime(latestUpdatedAt)}">最近更新：-</span>
+            </article>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <h3>最近交易</h3>
+                    <p>这里展示最近 6 条记录，便于快速核对 App 与后端的同步结果。</p>
+                </div>
+                <a class="button button-secondary" th:href="@{/manage/transactions}">去交易管理</a>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>类型</th>
+                        <th>金额</th>
+                        <th>分类</th>
+                        <th>账户</th>
+                        <th>商户</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${recentTransactions.isEmpty()}">
+                        <td colspan="6" class="empty-cell">当前还没有交易数据，可以先从 App 或网页侧录入一笔测试。</td>
+                    </tr>
+                    <tr th:each="transaction : ${recentTransactions}">
+                        <td th:text="${@manageFormat.dateTime(transaction.transactionTime)}">2026-04-07 19:00</td>
+                        <td>
+                            <span class="pill" th:classappend="${transaction.type == 'INCOME'} ? ' income' : ' expense'" th:text="${transaction.type == 'INCOME'} ? '收入' : '支出'">支出</span>
+                        </td>
+                        <td th:text="${@manageFormat.money(transaction.amountFen)}">￥0.00</td>
+                        <td th:text="${transaction.categoryName}">餐饮</td>
+                        <td th:text="${transaction.accountName ?: '未绑定'}">微信</td>
+                        <td th:text="${transaction.merchantName ?: '-'}">鹿角巷</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="quick-grid">
+            <article class="quick-card">
+                <h3>账户与余额</h3>
+                <p>需要快速修改演示资产时，直接去账户页维护默认账户和余额。</p>
+                <a th:href="@{/manage/accounts}">打开账户管理</a>
+            </article>
+            <article class="quick-card">
+                <h3>分类字典</h3>
+                <p>如果 App 里新增了分类图标或名称不一致，可以从分类页直接校正。</p>
+                <a th:href="@{/manage/categories}">打开分类管理</a>
+            </article>
+            <article class="quick-card">
+                <h3>同步对账</h3>
+                <p>同步页会展示 Token、聚合数量与最近记录，适合答辩时解释前后端如何互通。</p>
+                <a th:href="@{/manage/sync}">打开同步状态</a>
+            </article>
+        </section>
+    </main>
+</div>
+</body>
+</html>
