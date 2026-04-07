@@ -72,6 +72,7 @@
     <string name="statistics_trend_title">收支趋势对比</string>
     <string name="statistics_trend_subtitle">柱状图会根据当前周期自动切换展示粒度。</string>
     <string name="statistics_asset_trend_title">资产趋势图</string>
+    <string name="statistics_asset_trend_subtitle">按当前周期内的累计净变化绘制，用来观察资金走势，不直接等同于资产页总资产。</string>
     <string name="statistics_category_center">支出分类</string>
     <string name="statistics_income_legend">收入</string>
     <string name="statistics_expense_legend">支出</string>

@@ -397,6 +397,14 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/statistics_asset_trend_subtitle"
+                    android:textColor="@color/ink_secondary"
+                    android:textSize="13sp" />
+
                 <com.github.mikephil.charting.charts.LineChart
                     android:id="@+id/assetTrendChart"
                     android:layout_width="match_parent"

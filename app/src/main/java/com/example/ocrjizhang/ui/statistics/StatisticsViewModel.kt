@@ -217,14 +217,7 @@ class StatisticsViewModel @Inject constructor(
         canNavigatePrevious: Boolean,
         canNavigateNext: Boolean,
     ): StatisticsUiState {
-        var runningAssetFen = 0L
-        val assetTrend = trendBreakdown.map { trend ->
-            runningAssetFen += trend.incomeFen - trend.expenseFen
-            StatisticsAssetTrendUiModel(
-                label = trend.label,
-                amountFen = runningAssetFen,
-            )
-        }
+        val assetTrend = buildAssetTrendItems(trendBreakdown)
         val averageExpenseByBucketFen = if (trendBreakdown.isEmpty()) {
             0L
         } else {
@@ -394,6 +387,19 @@ class StatisticsViewModel @Inject constructor(
             val start = startMillis ?: currentRange.startMillis
             val end = endMillis ?: currentRange.endMillis
             return StatisticsCalculator.customRange(start, end, zoneId)
+        }
+
+        internal fun buildAssetTrendItems(
+            trendBreakdown: List<com.example.ocrjizhang.data.model.TrendBreakdown>,
+        ): List<StatisticsAssetTrendUiModel> {
+            var runningAssetFen = 0L
+            return trendBreakdown.map { trend ->
+                runningAssetFen += trend.incomeFen - trend.expenseFen
+                StatisticsAssetTrendUiModel(
+                    label = trend.label,
+                    amountFen = runningAssetFen,
+                )
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ import com.example.ocrjizhang.data.local.entity.TransactionSource
 import com.example.ocrjizhang.data.model.StatisticsPeriod
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -125,6 +126,37 @@ class StatisticsCalculatorTest {
         assertEquals(2, snapshot.categoryBreakdown.size)
         assertEquals(7, snapshot.trendBreakdown.size)
         assertTrue(snapshot.hasTransactions)
+    }
+
+    @Test
+    fun `all period trend keeps latest 12 month buckets`() {
+        val transactions = (1..14).map { index ->
+            val yearMonth = YearMonth.of(2024, 1).plusMonths(index.toLong() - 1L)
+            transaction(
+                id = index.toLong(),
+                type = RecordType.EXPENSE,
+                amountFen = 10_00L,
+                categoryName = "餐饮",
+                transactionTime = localDate("${yearMonth}-05"),
+            )
+        }
+        val range = StatisticsCalculator.rangeFor(
+            period = StatisticsPeriod.ALL,
+            referenceMillis = localDate("2025-12-31"),
+            zoneId = zoneId,
+            maxYear = 2036,
+        )
+
+        val snapshot = StatisticsCalculator.buildSnapshot(
+            period = StatisticsPeriod.ALL,
+            range = range,
+            transactions = transactions,
+            zoneId = zoneId,
+        )
+
+        assertEquals(12, snapshot.trendBreakdown.size)
+        assertEquals("3月", snapshot.trendBreakdown.first().label)
+        assertEquals("2月", snapshot.trendBreakdown.last().label)
     }
 
     private fun transaction(
