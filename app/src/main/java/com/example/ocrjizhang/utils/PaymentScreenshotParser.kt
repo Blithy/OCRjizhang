@@ -5,6 +5,10 @@ import kotlin.math.abs
 
 object PaymentScreenshotParser {
 
+    private val amountValueRegex = Regex(
+        pattern = """[-+]?(?:[¥￥]\s*)?\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|[-+]?(?:[¥￥]\s*)?\d{1,7}(?:\.\d{1,2})?""",
+    )
+
     private val dateValueRegex = Regex(
         pattern = """20\d{2}\s*[./\-\u5e74]\s*\d{1,2}\s*[./\-\u6708]\s*\d{1,2}(?:\s*\u65e5)?(?:\s*\d{1,2}:\d{2}(?::\d{2})?)?""",
     )
@@ -45,6 +49,16 @@ object PaymentScreenshotParser {
         "\u65f6\u95f4",
     )
 
+    private val summaryAmountLabels = listOf(
+        "\u5408\u8ba1",
+        "\u603b\u8ba1",
+        "\u5b9e\u4ed8",
+        "\u5e94\u4ed8",
+        "\u4ed8\u6b3e\u91d1\u989d",
+        "\u652f\u4ed8\u91d1\u989d",
+        "\u8ba2\u5355\u91d1\u989d",
+    )
+
     fun parse(
         lines: List<OcrLine>,
         fallback: ParsedReceiptData,
@@ -60,14 +74,15 @@ object PaymentScreenshotParser {
 
         val dateText = extractDateText(layoutLines) ?: fallback.dateText
         val merchantName = extractMerchantName(layoutLines) ?: fallback.merchantName
+        val amountCandidate = extractAmount(layoutLines)
 
-        if (dateText == null && merchantName == null) {
+        if (dateText == null && merchantName == null && amountCandidate == null) {
             return null
         }
 
         return ParsedReceiptData(
-            amountText = fallback.amountText,
-            amountFen = fallback.amountFen,
+            amountText = amountCandidate?.normalizedText ?: fallback.amountText,
+            amountFen = amountCandidate?.amountFen ?: fallback.amountFen,
             dateText = dateText,
             dateMillis = OcrReceiptParser.parseDateToMillis(dateText) ?: fallback.dateMillis,
             merchantName = merchantName,
@@ -75,14 +90,19 @@ object PaymentScreenshotParser {
     }
 
     private fun looksLikePaymentDetail(lines: List<LayoutLine>): Boolean {
-        var signalCount = 0
-        if (lines.any(::isPaymentTimeLabel)) signalCount += 1
-        if (lines.any(::isProductLabel)) signalCount += 1
-        if (lines.any { it.compactText == "\u4ea4\u6613\u5355\u53f7" }) signalCount += 1
-        if (lines.any { it.compactText == "\u5546\u6237\u5355\u53f7" }) signalCount += 1
-        if (lines.any { it.compactText == "\u6536\u5355\u673a\u6784" }) signalCount += 1
-        if (lines.any { it.compactText == "\u652f\u4ed8\u65b9\u5f0f" }) signalCount += 1
-        return signalCount >= 2
+        val strongSignalCount = buildList {
+            if (lines.any(::isPaymentTimeLabel)) add("time")
+            if (lines.any { it.compactText == "\u4ea4\u6613\u5355\u53f7" }) add("transaction_id")
+            if (lines.any { it.compactText == "\u5546\u6237\u5355\u53f7" }) add("merchant_order_id")
+            if (lines.any { it.compactText == "\u6536\u5355\u673a\u6784" }) add("acquirer")
+        }.size
+
+        val assistSignalCount = buildList {
+            if (lines.any(::isProductLabel)) add("product")
+            if (lines.any { it.compactText == "\u652f\u4ed8\u65b9\u5f0f" }) add("payment_method")
+        }.size
+
+        return strongSignalCount >= 1 && strongSignalCount + assistSignalCount >= 3
     }
 
     private fun extractDateText(lines: List<LayoutLine>): String? {
@@ -138,6 +158,43 @@ object PaymentScreenshotParser {
         return value?.text?.let(::cleanMerchantName)?.takeIf { it.isNotBlank() }
     }
 
+    private fun extractAmount(lines: List<LayoutLine>): AmountCandidate? {
+        val label = lines
+            .filter(::isSummaryAmountLabel)
+            .maxByOrNull(::scoreSummaryLabel)
+            ?: return null
+
+        val bestCandidate = lines
+            .asSequence()
+            .filter { candidateLine ->
+                candidateLine !== label &&
+                    candidateLine.centerY >= label.centerY - maxOf(label.height, 28) &&
+                    candidateLine.top <= label.bottom + 120 &&
+                    candidateLine.right >= label.right - 24
+            }
+            .mapNotNull { candidateLine ->
+                extractAmountCandidate(candidateLine.text)?.let { amount ->
+                    CandidateWithAmount(candidate = candidateLine, amount = amount)
+                }
+            }
+            .maxByOrNull { candidateWithAmount ->
+                val line = candidateWithAmount.candidate
+                var score = 0
+                score += 180 - abs(line.centerY - label.centerY)
+                score += (line.left - label.left).coerceAtLeast(0) / 3
+                if (line.left >= label.right - 24) score += 120
+                if (line.top >= label.top) score += 20
+                if (abs(line.centerY - label.centerY) <= maxOf(label.height, 28)) score += 120
+                if (line.text.contains('¥') || line.text.contains('\uffe5')) score += 35
+                if (line.text.contains("\u539f\u4ef7")) score -= 100
+                if (line.text.contains("\u7acb\u51cf")) score -= 70
+                if (line.text.contains("\u4f18\u60e0") && candidateWithAmount.amount.amountIndex == 0) score -= 80
+                score + candidateWithAmount.amount.score
+            }
+
+        return bestCandidate?.amount
+    }
+
     private fun selectBestValue(
         label: LayoutLine,
         candidates: List<LayoutLine>,
@@ -173,6 +230,13 @@ object PaymentScreenshotParser {
             compact.startsWith("\u5546\u54c1") ||
             compact == "\u5546\u5bb6" ||
             compact == "\u5546\u6237\u540d\u79f0"
+    }
+
+    private fun isSummaryAmountLabel(line: LayoutLine): Boolean {
+        val compact = line.compactText
+        return summaryAmountLabels.any { label ->
+            compact == label || compact.startsWith(label)
+        }
     }
 
     private fun isMerchantValueCandidate(line: LayoutLine): Boolean {
@@ -216,6 +280,59 @@ object PaymentScreenshotParser {
         if (line.top >= 260) score += 20
         if (line.text.contains("\u516c\u53f8")) score -= 40
         return score
+    }
+
+    private fun scoreSummaryLabel(line: LayoutLine): Int {
+        var score = line.top
+        if (line.compactText == "\u5408\u8ba1" || line.compactText.startsWith("\u5408\u8ba1")) score += 240
+        if (line.compactText == "\u5b9e\u4ed8" || line.compactText.startsWith("\u5b9e\u4ed8")) score += 180
+        if (line.compactText == "\u5e94\u4ed8" || line.compactText.startsWith("\u5e94\u4ed8")) score += 140
+        return score
+    }
+
+    private fun extractAmountCandidate(text: String): AmountCandidate? {
+        return amountValueRegex.findAll(text)
+            .mapNotNull { match ->
+                val rawValue = match.value.trim()
+                val normalizedText = rawValue
+                    .replace("¥", "")
+                    .replace("\uffe5", "")
+                    .replace(",", "")
+                    .removePrefix("+")
+                    .removePrefix("-")
+                    .trim()
+                val amountFen = AccountingFormatters.parseToFen(normalizedText) ?: return@mapNotNull null
+                if (amountFen <= 0L) {
+                    return@mapNotNull null
+                }
+
+                val start = match.range.first
+                val end = match.range.last + 1
+                val prefix = text.substring((start - 6).coerceAtLeast(0), start)
+                val suffix = text.substring(end, (end + 6).coerceAtMost(text.length))
+                val isLastAmountInLine = amountValueRegex.findAll(text).lastOrNull()?.range == match.range
+
+                var score = 0
+                if (normalizedText.contains('.')) score += 100
+                if (rawValue.contains('¥') || rawValue.contains('\uffe5')) score += 70
+                if (start >= text.length / 2) score += 55
+                if (end >= text.length - 2) score += 45
+                if (isLastAmountInLine) score += 80
+                if (prefix.contains("\u539f\u4ef7")) score -= 110
+                if (prefix.contains("\u4f18\u60e0") && !isLastAmountInLine) score -= 90
+                if (prefix.contains("\u7acb\u51cf")) score -= 90
+                if (suffix.contains("\u4f18\u60e0")) score -= 50
+                if (rawValue.startsWith("-")) score -= 160
+
+                AmountCandidate(
+                    normalizedText = normalizedText,
+                    amountFen = amountFen,
+                    score = score,
+                    sourceText = text.trim(),
+                    amountIndex = amountValueRegex.findAll(text).indexOfFirst { it.range == match.range },
+                )
+            }
+            .maxByOrNull(AmountCandidate::score)
     }
 
     private fun isKnownLabel(line: LayoutLine): Boolean {
@@ -272,4 +389,17 @@ object PaymentScreenshotParser {
         val height: Int
             get() = (bottom - top).coerceAtLeast(1)
     }
+
+    private data class AmountCandidate(
+        val normalizedText: String,
+        val amountFen: Long,
+        val score: Int,
+        val sourceText: String,
+        val amountIndex: Int,
+    )
+
+    private data class CandidateWithAmount(
+        val candidate: LayoutLine,
+        val amount: AmountCandidate,
+    )
 }

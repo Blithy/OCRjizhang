@@ -52,6 +52,23 @@ object OcrReceiptParser {
         "\u6263\u6b3e",
     )
 
+    private val summaryAmountKeywords = listOf(
+        "total",
+        "\u5408\u8ba1",
+        "\u603b\u8ba1",
+        "\u5b9e\u4ed8",
+        "\u5b9e\u4ed8\u6b3e",
+        "\u5b9e\u4ed8\u6b3e",
+        "\u5b9e\u4ed8\u91d1\u989d",
+        "\u5b9e\u4ed8\u6b3e",
+        "\u5b9e\u4ed8\u4ef7",
+        "\u5e94\u4ed8",
+        "\u4ed8\u6b3e",
+        "\u4ed8\u6b3e\u91d1\u989d",
+        "\u8ba2\u5355\u5b9e\u4ed8",
+        "\u652f\u4ed8\u91d1\u989d",
+    )
+
     private val amountPenaltyKeywords = listOf(
         "coupon",
         "discount",
@@ -62,6 +79,16 @@ object OcrReceiptParser {
         "\u51cf\u514d",
         "\u8fd4\u73b0",
     )
+
+    private val summarySectionStopKeywords = listOf(
+        "\u66f4\u591a\u63a8\u8350",
+        "\u63a8\u8350",
+        "\u731c\u4f60\u559c\u6b22",
+    )
+
+    private val quantityRegex = Regex("""[xX\u00d7]\s*\d+""")
+    private val standaloneSummaryAmountRegex = Regex("""^[¥￥]?\s*\d+(?:\.\d{1,2})?\s*[vV>》]?$""")
+    private val productModelRegex = Regex("""[A-Za-z]{2,}[-_A-Za-z0-9]{1,}""")
 
     private val dateKeywords = listOf(
         "date",
@@ -93,6 +120,22 @@ object OcrReceiptParser {
         "\u632f\u52a8",
         "\u7279\u4ef7\u5916\u5356\u56e2\u8d2d",
         "\u7f8e\u597d\u751f\u6d3b\u5e2e\u624b",
+        "\u8fd0\u8f93\u4e2d",
+        "\u5df2\u53d1\u8d27",
+        "\u81ea\u52a8\u786e\u8ba4",
+        "\u9884\u8ba1\u660e\u5929\u9001\u8fbe",
+        "\u67e5\u770b\u7269\u6d41",
+        "\u7533\u8bf7\u552e\u540e",
+        "\u786e\u8ba4\u6536\u8d27",
+        "\u52a0\u5165\u8d2d\u7269\u8f66",
+        "\u50ac\u7269\u6d41",
+        "\u670d\u52a1\u4fdd\u969c",
+        "\u9000\u6b3e",
+        "\u53d6\u4ef6",
+        "\u865a\u62df\u53f7",
+        "\u53f7\u7801\u4fdd\u62a4",
+        "\u8ba2\u5355\u4fe1\u606f",
+        "\u5ba2\u670d",
         "http",
         "www",
     )
@@ -199,6 +242,8 @@ object OcrReceiptParser {
         .trim()
 
     private fun extractBestAmount(lines: List<String>): AmountCandidate? {
+        extractSummaryAmount(lines)?.let { return it }
+
         val candidates = buildList {
             lines.forEachIndexed { index, line ->
                 val lowerCaseLine = line.lowercase(Locale.ROOT)
@@ -216,12 +261,15 @@ object OcrReceiptParser {
                 val digitCount = line.count(Char::isDigit)
                 val isStandaloneNumericLine = line.trim()
                     .matches(Regex("""^[-+]?\d+(?:\.\d{1,2})?$"""))
+                val hasQuantityMarker = quantityRegex.containsMatchIn(line)
+                val allAmountsInLine = amountRegex.findAll(line).toList()
+                val hasMultipleAmounts = allAmountsInLine.size >= 2
 
                 if (isTimeOnlyLine && !hasKeyword) {
                     return@forEachIndexed
                 }
 
-                amountRegex.findAll(line).forEach { match ->
+                allAmountsInLine.forEach { match ->
                     val rawAmount = match.value
                     val normalizedText = rawAmount
                         .removePrefix("+")
@@ -252,6 +300,9 @@ object OcrReceiptParser {
                     if (line.contains(':') && !rawAmount.contains('.') && !hasKeyword) score -= 60
                     if (!hasKeyword && !rawAmount.contains('.') && !rawAmount.startsWith("-")) score -= 55
                     if (!hasKeyword && normalizedText.length >= 4 && !rawAmount.contains('.')) score -= 35
+                    if (hasQuantityMarker && !hasKeyword) score -= 120
+                    if (hasMultipleAmounts && !hasKeyword) score -= 90
+                    if ((line.contains("\u6253\u78e8\u7b14") || line.contains("\u5546\u54c1") || line.contains("\u5355\u4ef7")) && !hasKeyword) score -= 80
                     score += amountFen.coerceAtMost(99_999L).toInt() / 1_000
 
                     add(
@@ -267,6 +318,140 @@ object OcrReceiptParser {
         }
 
         return candidates.maxByOrNull(AmountCandidate::score)
+    }
+
+    private fun extractSummaryAmount(lines: List<String>): AmountCandidate? {
+        val anchorIndex = lines.indexOfLast { line ->
+            val lowerCaseLine = line.lowercase(Locale.ROOT)
+            summaryAmountKeywords.any { keyword ->
+                lowerCaseLine.contains(keyword.lowercase(Locale.ROOT))
+            }
+        }.takeIf { it >= 0 } ?: lines.indexOfLast { line ->
+            val lowerCaseLine = line.lowercase(Locale.ROOT)
+            amountKeywords.any { keyword ->
+                lowerCaseLine.contains(keyword.lowercase(Locale.ROOT))
+            }
+        }
+        if (anchorIndex == -1) {
+            return null
+        }
+
+        val candidates = buildList {
+            val windowEnd = (anchorIndex + 48).coerceAtMost(lines.lastIndex)
+            for (index in anchorIndex..windowEnd) {
+                val line = lines[index]
+                val lowerCaseLine = line.lowercase(Locale.ROOT)
+                val hasSummaryKeyword = summaryAmountKeywords.any { keyword ->
+                    lowerCaseLine.contains(keyword.lowercase(Locale.ROOT))
+                } || amountKeywords.any { keyword ->
+                    lowerCaseLine.contains(keyword.lowercase(Locale.ROOT))
+                }
+                if (index > anchorIndex && summarySectionStopKeywords.any { stop ->
+                        lowerCaseLine.contains(stop.lowercase(Locale.ROOT))
+                    }
+                ) {
+                    continue
+                }
+
+                val matches = amountRegex.findAll(line).toList()
+                matches.forEachIndexed { amountIndex, match ->
+                    val rawAmount = match.value
+                    val normalizedText = rawAmount
+                        .removePrefix("+")
+                        .removePrefix("-")
+                        .replace(",", "")
+                    val amountFen = AccountingFormatters.parseToFen(normalizedText) ?: return@forEachIndexed
+                    if (amountFen <= 0L) {
+                        return@forEachIndexed
+                    }
+
+                    val isLastAmountInLine = amountIndex == matches.lastIndex
+                    val prefix = line.substring(0, match.range.first)
+                    val suffix = line.substring(match.range.last + 1)
+                    val isStandaloneSummaryLine = standaloneSummaryAmountRegex.matches(line.trim())
+                    val hasLaterDecimalCandidate = ((index + 1)..(index + 6).coerceAtMost(lines.lastIndex)).any { nextIndex ->
+                        decimalAmountRegex.containsMatchIn(lines[nextIndex])
+                    }
+                    val nearbyContext = buildString {
+                        append(line)
+                        append(' ')
+                        if (index > 0) append(lines[index - 1])
+                        append(' ')
+                        if (index < lines.lastIndex) append(lines[index + 1])
+                        append(' ')
+                        if (index < lines.lastIndex - 1) append(lines[index + 2])
+                    }
+                    val hasNearbyQuantity = quantityRegex.containsMatchIn(nearbyContext)
+                    val hasNearbyProductContext =
+                        nearbyContext.contains("\u52a0\u5165\u8d2d\u7269\u8f66") ||
+                            nearbyContext.contains("\u7533\u8bf7\u552e\u540e") ||
+                            nearbyContext.contains("\u9000\u8d27") ||
+                            nearbyContext.contains("\u78b3\u7ea4\u7ef4") ||
+                            productModelRegex.containsMatchIn(nearbyContext)
+                    val hasNearbyOrderContext =
+                        nearbyContext.contains("\u8ba2\u5355\u4fe1\u606f") ||
+                            nearbyContext.contains("\u590d\u5236") ||
+                            nearbyContext.contains("\u67e5\u770b\u66f4\u591a")
+                    val contentPrefix = prefix.trim()
+                    val leadingTextLength = contentPrefix.count { character ->
+                        character.isLetter() || character.code in 0x4E00..0x9FFF
+                    }
+
+                    var score = 0
+                    if (hasSummaryKeyword) score += 320
+                    if (index == anchorIndex) score += 180
+                    if (index > anchorIndex) score += 120 - (index - anchorIndex) * 5
+                    if (normalizedText.contains('.')) score += 120
+                    if (rawAmount.contains('¥') || rawAmount.contains('\uffe5')) score += 80
+                    if (isLastAmountInLine) score += 70
+                    if (match.range.first >= line.length / 2) score += 45
+                    if (isStandaloneSummaryLine) score += 240
+                    if (hasNearbyOrderContext) score += 180
+                    if (line.contains("\u539f\u4ef7")) score -= 180
+                    if (line.contains("\u5355\u4ef7")) score -= 150
+                    if (line.contains("\u6253\u5305\u8d39")) score -= 160
+                    if (line.contains("\u914d\u9001\u8d39")) score -= 200
+                    if (line.contains("\u4f18\u60e0") && !isLastAmountInLine) score -= 180
+                    if (line.contains("\u7acb\u51cf") && !isLastAmountInLine) score -= 160
+                    if (line.contains("\u4f18\u60e0") && isLastAmountInLine) score += 90
+                    if (line.contains("\u4f18\u60e0") && isLastAmountInLine && (line.contains('¥') || line.contains('\uffe5'))) score += 120
+                    if (line.contains("\u66f4\u591a\u63a8\u8350")) score -= 220
+                    if (line.contains("\u5916\u5356") && !hasSummaryKeyword && index > anchorIndex + 1) score -= 40
+                    if (prefix.contains("\u4f18\u60e0") && !isLastAmountInLine) score -= 80
+                    if (suffix.contains("\u4f18\u60e0")) score -= 50
+                    if (matches.size >= 2 && !hasSummaryKeyword && !(line.contains("\u4f18\u60e0") && isLastAmountInLine)) score -= 140
+                    if (rawAmount.startsWith("-")) score -= 220
+                    if (!normalizedText.contains('.') && amountFen <= 900L && !hasSummaryKeyword && !line.contains('¥') && !line.contains('\uffe5')) {
+                        score -= 140
+                    }
+                    if (isStandaloneSummaryLine &&
+                        !normalizedText.contains('.') &&
+                        !hasSummaryKeyword &&
+                        !line.contains('¥') &&
+                        !line.contains('\uffe5') &&
+                        hasLaterDecimalCandidate
+                    ) {
+                        score -= 260
+                    }
+                    if (leadingTextLength >= 6 && !hasSummaryKeyword) score -= 180
+                    if (hasNearbyQuantity && !hasSummaryKeyword) score -= 150
+                    if (hasNearbyProductContext && !hasSummaryKeyword && !isStandaloneSummaryLine) score -= 180
+
+                    add(
+                        AmountCandidate(
+                            normalizedText = normalizedText,
+                            amountFen = amountFen,
+                            lineIndex = index,
+                            score = score,
+                        ),
+                    )
+                }
+            }
+        }
+
+        return candidates
+            .filter { it.score >= 180 }
+            .maxByOrNull(AmountCandidate::score)
     }
 
     private fun extractBestDate(lines: List<String>): Pair<String, Long>? {
@@ -297,7 +482,7 @@ object OcrReceiptParser {
         val candidates = buildList {
             lines.forEachIndexed { index, rawLine ->
                 val line = rawLine
-                    .trimStart('`', '.', '\u00b7', '\u3002', '-', '_', ':')
+                    .trimStart('`', '.', '\u00b7', '\u3002', '-', '_', ':', '@', '|', '[', ']', '>', '\u300b', '①')
                     .trim()
                 val normalizedMerchant = normalizeMerchantName(line)
                 val shouldInspect = index < 18 || amountLineIndex?.let { abs(index - it) <= 3 } == true
@@ -327,12 +512,22 @@ object OcrReceiptParser {
                 }
 
                 val digitCount = normalizedMerchant.count(Char::isDigit)
+                val chineseCount = normalizedMerchant.count { character -> character.code in 0x4E00..0x9FFF }
+                val latinLetterCount = normalizedMerchant.count { character -> character in 'A'..'Z' || character in 'a'..'z' }
                 val letterOrChineseCount = normalizedMerchant.count { character ->
                     character.isLetter() || character.code in 0x4E00..0x9FFF
                 }
                 if (digitCount > 6 || letterOrChineseCount < 2) {
                     return@forEachIndexed
                 }
+
+                val repeatedBrandMentionCount = lines.count { candidateLine ->
+                    val normalizedCandidate = normalizeMerchantName(candidateLine)
+                    normalizedCandidate != normalizedMerchant &&
+                        normalizedCandidate.startsWith(normalizedMerchant) &&
+                        normalizedCandidate.length >= normalizedMerchant.length + 2
+                }
+                val hasMixedBrandCue = latinLetterCount >= 3 && chineseCount >= 2
 
                 var score = 100 - index * 6
                 if (merchantKeywords.any { keyword -> normalizedMerchant.contains(keyword, ignoreCase = true) }) {
@@ -352,6 +547,15 @@ object OcrReceiptParser {
                 }
                 if (normalizedMerchant.length >= 8) {
                     score += 15
+                }
+                if (hasMixedBrandCue) {
+                    score += 70
+                }
+                if (repeatedBrandMentionCount > 0) {
+                    score += 55 + repeatedBrandMentionCount.coerceAtMost(2) * 20
+                }
+                if (normalizedMerchant.endsWith("\u53f7") && !normalizedMerchant.contains("\u5e97") && !hasMixedBrandCue) {
+                    score -= 90
                 }
                 if (amountLineIndex != null && index > amountLineIndex) {
                     score += 18
@@ -383,7 +587,7 @@ object OcrReceiptParser {
             "",
         )
         .trim()
-        .trim('-', '_', '.', '\u00b7', '\u3002', ':')
+        .trim('-', '_', '.', '\u00b7', '\u3002', ':', '>', '\u300b')
         .trim()
 
     private data class AmountCandidate(
