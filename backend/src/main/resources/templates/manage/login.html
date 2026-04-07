@@ -4,9 +4,9 @@
 <body class="login-page">
 <main class="login-shell">
     <section class="login-card">
-        <p class="eyebrow">H13 / Web 管理面板</p>
-        <h1>登录本地演示后台</h1>
-        <p class="intro">这个页面只服务于本机答辩演示和联调排障，账号直接复用 App 后端里的用户数据。</p>
+        <p class="eyebrow">Web 管理面板</p>
+        <h1>登录本地后台</h1>
+        <p class="intro">这个页面用于本机联调、查看和维护后端数据，账号直接复用 App 后端里的用户数据。</p>
 
         <div th:replace="~{manage/fragments :: flash(${successMessage}, ${errorMessage})}"></div>
 
@@ -24,7 +24,7 @@
         </form>
 
         <div class="login-tip">
-            <strong>默认演示账号</strong>
+            <strong>默认账号</strong>
             <span>`demo / 123456`</span>
         </div>
     </section>

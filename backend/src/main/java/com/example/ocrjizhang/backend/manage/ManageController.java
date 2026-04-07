@@ -68,7 +68,7 @@ public class ManageController {
             AuthPayloadDto payload = demoStore.login(new LoginRequest(form.getUsername(), form.getPassword()));
             HttpSession session = request.getSession(true);
             ManageSession.signIn(session, payload);
-            redirectAttributes.addFlashAttribute("successMessage", "已进入演示后台管理面板。");
+            redirectAttributes.addFlashAttribute("successMessage", "已进入后台管理面板。");
             return "redirect:/manage/dashboard";
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute("errorMessage", exception.getMessage());

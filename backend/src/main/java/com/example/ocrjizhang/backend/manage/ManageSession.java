@@ -35,7 +35,7 @@ public final class ManageSession {
     public static String displayName(HttpSession session) {
         Object nickname = session.getAttribute(ATTRIBUTE_NICKNAME);
         if (nickname instanceof String value && !value.isBlank()) {
-            return value;
+            return "本机演示用户".equals(value) ? "本机用户" : value;
         }
         Object username = session.getAttribute(ATTRIBUTE_USERNAME);
         return username instanceof String value && !value.isBlank() ? value : "未登录用户";

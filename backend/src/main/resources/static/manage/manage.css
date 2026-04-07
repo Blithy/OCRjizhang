@@ -98,6 +98,7 @@ select {
 .quick-card p,
 .login-tip span {
     color: var(--text-secondary);
+    margin: 0;
     line-height: 1.6;
 }
 
@@ -191,13 +192,18 @@ select {
     padding: 32px;
     display: grid;
     gap: 24px;
+    align-content: start;
 }
 
 .page-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 16px;
+}
+
+.page-header > div {
+    min-width: 0;
 }
 
 .stats-grid,
@@ -256,7 +262,7 @@ select {
 
 .panel {
     border-radius: var(--radius-lg);
-    padding: 24px;
+    padding: 20px 24px 24px;
 }
 
 .panel-header {
@@ -267,10 +273,18 @@ select {
     margin-bottom: 18px;
 }
 
+.panel-header > div > :first-child {
+    margin-top: 0;
+}
+
 .panel-header h3,
 .quick-card h3 {
     margin: 0;
     font-size: 22px;
+}
+
+.panel-header p {
+    margin: 6px 0 0;
 }
 
 .table-wrap {
@@ -316,6 +330,36 @@ thead th {
     margin-right: 8px;
     vertical-align: middle;
     border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.empty-state-panel {
+    display: grid;
+    align-content: start;
+}
+
+.empty-state-body {
+    display: grid;
+    gap: 12px;
+    padding: 10px 4px 4px;
+}
+
+.empty-state-body h4 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.2;
+}
+
+.empty-state-body p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.empty-state-list {
+    margin: 4px 0 0;
+    padding-left: 20px;
+    color: var(--text-secondary);
+    line-height: 1.8;
 }
 
 .form-stack {

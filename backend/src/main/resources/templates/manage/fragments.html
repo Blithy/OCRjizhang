@@ -9,15 +9,15 @@
 <body>
 <aside th:fragment="sidebar(activeNav, currentUserName, currentUsername, currentToken)" class="sidebar">
     <div class="brand-block">
-        <p class="brand-kicker">H13 后端演示面板</p>
+        <p class="brand-kicker">本地管理面板</p>
         <h1>小记OCR记账</h1>
-        <p class="brand-copy">浏览器侧查看与维护演示数据，便于答辩时对账和排障。</p>
+        <p class="brand-copy">浏览器侧查看与维护本地数据，便于联调、核对与排障。</p>
     </div>
 
     <div class="profile-card">
         <div class="profile-avatar" th:text="${#strings.substring(currentUserName, 0, 1)}">演</div>
         <div class="profile-copy">
-            <strong th:text="${currentUserName}">本机演示用户</strong>
+            <strong th:text="${currentUserName}">本机用户</strong>
             <span th:text="${currentUsername}">demo</span>
         </div>
     </div>

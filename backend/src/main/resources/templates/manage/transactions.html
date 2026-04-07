@@ -10,7 +10,7 @@
             <div>
                 <p class="eyebrow">交易管理</p>
                 <h2>浏览器侧直接维护账本记录</h2>
-                <p class="intro">这里能直接新增、编辑和删除交易，适合在演示前修正数据，或配合同步页面做对账说明。</p>
+                <p class="intro">这里能直接新增、编辑和删除交易，方便修正数据，或配合同步页面进行对账。</p>
             </div>
         </header>
 
@@ -40,7 +40,7 @@
                         </thead>
                         <tbody>
                         <tr th:if="${transactions.isEmpty()}">
-                            <td colspan="7" class="empty-cell">当前没有交易，右侧可直接补一条演示数据。</td>
+                            <td colspan="7" class="empty-cell">当前没有交易，右侧可直接补一条记录。</td>
                         </tr>
                         <tr th:each="transaction : ${transactions}">
                             <td th:text="${@manageFormat.dateTime(transaction.transactionTime)}">2026-04-07 19:00</td>
@@ -139,7 +139,7 @@
 
                     <label class="field">
                         <span>备注</span>
-                        <input type="text" th:field="*{remark}" placeholder="例如：答辩演示样例">
+                        <input type="text" th:field="*{remark}" placeholder="例如：本地录入样例">
                     </label>
 
                     <button class="button" type="submit" th:text="${editingTransactionId != null} ? '保存交易' : '创建交易'">创建交易</button>

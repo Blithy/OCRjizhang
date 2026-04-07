@@ -10,14 +10,32 @@
             <div>
                 <p class="eyebrow">分类管理</p>
                 <h2>维护收入与支出分类字典</h2>
-                <p class="intro">这里的分类会被 App 记账面板和统计页复用，适合演示前快速补齐分类名称、图标和颜色。</p>
+                <p class="intro">这里的分类会被 App 记账面板和统计页复用，方便快速补齐分类名称、图标和颜色。</p>
             </div>
         </header>
 
         <div th:replace="~{manage/fragments :: flash(${successMessage}, ${errorMessage})}"></div>
 
         <section class="two-column-layout">
-            <article class="panel">
+            <article class="panel empty-state-panel" th:if="${categories.isEmpty()}">
+                <div class="panel-header">
+                    <div>
+                        <h3>分类列表</h3>
+                        <p>当前还没有分类数据，可以先同步，或直接在右侧新增一个分类。</p>
+                    </div>
+                </div>
+
+                <div class="empty-state-body">
+                    <h4>分类字典暂时为空</h4>
+                    <p>分类会影响记账录入和统计展示。完成一次同步后，这里会自动显示当前用户的收入和支出分类。</p>
+                    <ul class="empty-state-list">
+                        <li>在 App 里执行同步，拉起默认分类和自定义分类</li>
+                        <li>或者直接在右侧新增一个分类进行本地维护</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="panel" th:unless="${categories.isEmpty()}">
                 <div class="panel-header">
                     <div>
                         <h3>分类列表</h3>
@@ -37,9 +55,6 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:if="${categories.isEmpty()}">
-                            <td colspan="5" class="empty-cell">当前没有分类，右侧可直接新增一个用于演示的分类。</td>
-                        </tr>
                         <tr th:each="category : ${categories}">
                             <td>
                                 <strong th:text="${category.name}">餐饮</strong>
@@ -70,7 +85,7 @@
                 <div class="panel-header">
                     <div>
                         <h3 th:text="${editingCategoryId != null} ? '编辑分类' : '新增分类'">新增分类</h3>
-                        <p>图标和颜色只是演示级字段，但可以帮助你快速核对 App 侧分类语义是否一致。</p>
+                        <p>图标和颜色可以帮助你快速核对 App 侧分类语义是否一致。</p>
                     </div>
                     <a class="button button-secondary" th:if="${editingCategoryId != null}" th:href="@{/manage/categories}">新建模式</a>
                 </div>

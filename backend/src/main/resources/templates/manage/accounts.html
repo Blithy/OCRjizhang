@@ -10,14 +10,32 @@
             <div>
                 <p class="eyebrow">账户管理</p>
                 <h2>维护资金账户与余额</h2>
-                <p class="intro">这里的改动会直接影响同步后的资产展示和交易归属，适合在答辩前快速校对账户状态。</p>
+                <p class="intro">这里的改动会直接影响同步后的资产展示和交易归属，方便快速校对账户状态。</p>
             </div>
         </header>
 
         <div th:replace="~{manage/fragments :: flash(${successMessage}, ${errorMessage})}"></div>
 
         <section class="two-column-layout">
-            <article class="panel">
+            <article class="panel empty-state-panel" th:if="${accounts.isEmpty()}">
+                <div class="panel-header">
+                    <div>
+                        <h3>账户列表</h3>
+                        <p>当前还没有账户数据，可以先同步，或直接在右侧新增一个账户。</p>
+                    </div>
+                </div>
+
+                <div class="empty-state-body">
+                    <h4>账户数据暂时为空</h4>
+                    <p>如果你刚登录后台，这通常表示本地还没有回写到账户数据。完成一次同步后，这里会自动显示账户列表。</p>
+                    <ul class="empty-state-list">
+                        <li>在 App 里点击同步，把账户数据回写到后端</li>
+                        <li>或者直接在右侧手动新增一个账户用于本地测试</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="panel" th:unless="${accounts.isEmpty()}">
                 <div class="panel-header">
                     <div>
                         <h3>账户列表</h3>
@@ -37,9 +55,6 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:if="${accounts.isEmpty()}">
-                            <td colspan="5" class="empty-cell">当前没有账户，右侧可直接新增一个演示账户。</td>
-                        </tr>
                         <tr th:each="account : ${accounts}">
                             <td>
                                 <strong th:text="${account.name}">微信</strong>
@@ -67,7 +82,7 @@
                 <div class="panel-header">
                     <div>
                         <h3 th:text="${editingAccountId != null} ? '编辑账户' : '新增账户'">新增账户</h3>
-                        <p>支持修改名称、简称和余额，适合快速准备答辩数据。</p>
+                        <p>支持修改名称、简称和余额，方便快速准备和维护本地数据。</p>
                     </div>
                     <a class="button button-secondary" th:if="${editingAccountId != null}" th:href="@{/manage/accounts}">新建模式</a>
                 </div>

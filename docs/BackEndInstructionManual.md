@@ -7,6 +7,9 @@
 登录接口探活成功（/api/auth/login 返回 code=0）
 你自己常用这几条 PowerShell 命令就够了：
 
+后端网址：http://127.0.0.1:8080/manage/login
+网址登录：demo / 123456
+
 启动后端（前台看实时日志）
 cd E:\AndroidDevelopSave\OCRjizhang
 .\gradlew.bat :backend:bootRun
