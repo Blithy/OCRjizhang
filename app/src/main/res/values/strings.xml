@@ -83,11 +83,11 @@
     <string name="profile_user_manage_entry_subtitle">修改昵称、邮箱、手机号和登录密码</string>
     <string name="profile_category_entry_title">分类管理</string>
     <string name="profile_category_entry_subtitle">管理本地分类，新增和编辑都会立即应用到记账流程。</string>
-    <string name="profile_sync_entry_title">立即同步</string>
-    <string name="profile_sync_entry_subtitle">将本地分类和交易变更上传并拉取云端最新数据，保持账本状态一致。</string>
+    <string name="profile_sync_entry_title">拉取云端最新数据</string>
+    <string name="profile_sync_entry_subtitle">用于把网页后台或其他设备上的最新数据拉回本机；如果还有未上传的本地改动，会先自动补传。</string>
     <string name="profile_logout_button">退出登录</string>
-    <string name="profile_sync_action">立即同步</string>
-    <string name="profile_sync_action_loading">同步中...</string>
+    <string name="profile_sync_action">拉取云端最新数据</string>
+    <string name="profile_sync_action_loading">拉取中...</string>
     <string name="profile_user_dialog_title">编辑用户信息</string>
     <string name="profile_user_dialog_hint">可修改昵称、邮箱、手机号和登录密码，保存后会立即更新到当前账号。</string>
     <string name="profile_user_dialog_password_label">新密码（可选）</string>

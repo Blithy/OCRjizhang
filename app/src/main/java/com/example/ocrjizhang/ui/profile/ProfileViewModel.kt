@@ -50,24 +50,24 @@ class ProfileViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSyncing = true)
-            val message = syncRepository.syncNow().fold(
+            val message = syncRepository.pullLatest().fold(
                 onSuccess = { result ->
                     when {
                         result.pushedCount == 0 &&
                             result.accountCount == 0 &&
                             result.categoryCount == 0 &&
                             result.transactionCount == 0 ->
-                            "当前没有新的本地改动，演示后端也还没有数据。"
+                            "已检查云端，当前还没有可拉取的数据。"
 
                         result.pushedCount == 0 ->
-                            "同步完成：当前云端有 ${result.accountCount} 个账户、${result.categoryCount} 个分类、${result.transactionCount} 条交易，本次没有新的本地改动。"
+                            "已拉取云端最新数据：当前云端有 ${result.accountCount} 个账户、${result.categoryCount} 个分类、${result.transactionCount} 条交易。"
 
                         else ->
-                            "同步完成：已上传 ${result.pushedCount} 条本地变更，当前云端共 ${result.accountCount} 个账户、${result.categoryCount} 个分类、${result.transactionCount} 条交易。"
+                            "已先补传 ${result.pushedCount} 条未上传本地变更，再拉取云端最新数据：当前云端有 ${result.accountCount} 个账户、${result.categoryCount} 个分类、${result.transactionCount} 条交易。"
                     }
                 },
                 onFailure = { throwable ->
-                    throwable.message ?: "同步失败，请检查本地后端和 base.url 配置。"
+                    throwable.message ?: "拉取失败，请检查本地后端和 base.url 配置。"
                 },
             )
             _uiState.value = _uiState.value.copy(isSyncing = false)

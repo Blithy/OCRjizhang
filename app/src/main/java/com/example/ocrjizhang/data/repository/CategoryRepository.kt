@@ -23,6 +23,7 @@ class CategoryRepository @Inject constructor(
     private val categoryDao: CategoryDao,
     private val transactionDao: TransactionDao,
     private val syncOperationDao: SyncOperationDao,
+    private val syncRepository: SyncRepository,
     private val gson: Gson,
 ) {
 
@@ -42,6 +43,7 @@ class CategoryRepository @Inject constructor(
                 enqueueCategorySync(category, SyncOperationType.CREATE, category.createdAt)
             }
         }
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     suspend fun createCategory(userId: Long, type: RecordType, rawName: String, iconKey: String) {
@@ -67,6 +69,7 @@ class CategoryRepository @Inject constructor(
             categoryDao.upsert(category)
             enqueueCategorySync(category, SyncOperationType.CREATE, now)
         }
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     suspend fun updateCategory(userId: Long, categoryId: Long, rawName: String, iconKey: String) {
@@ -102,6 +105,7 @@ class CategoryRepository @Inject constructor(
             )
             enqueueCategorySync(updated, SyncOperationType.UPDATE, now)
         }
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     suspend fun deleteCategory(userId: Long, categoryId: Long) {
@@ -132,6 +136,7 @@ class CategoryRepository @Inject constructor(
             categoryDao.deleteById(category.id)
             enqueueCategorySync(category, SyncOperationType.DELETE, now)
         }
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     private suspend fun getOwnedCategory(userId: Long, categoryId: Long): CategoryEntity {

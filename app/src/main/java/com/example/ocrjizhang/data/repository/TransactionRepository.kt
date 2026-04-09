@@ -26,6 +26,7 @@ class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
     private val syncOperationDao: SyncOperationDao,
+    private val syncRepository: SyncRepository,
     private val gson: Gson,
 ) {
 
@@ -78,6 +79,7 @@ class TransactionRepository @Inject constructor(
             applyBalanceDelta(account.id, signedAmount(type, amountFen), now)
             enqueueTransactionSync(entity, SyncOperationType.CREATE, now)
         }
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     suspend fun updateTransaction(
@@ -119,6 +121,7 @@ class TransactionRepository @Inject constructor(
             applyBalanceDelta(account.id, signedAmount(type, amountFen), now)
             enqueueTransactionSync(entity, SyncOperationType.UPDATE, now)
         }
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     suspend fun deleteTransaction(userId: Long, transactionId: Long) {
@@ -129,6 +132,7 @@ class TransactionRepository @Inject constructor(
             transactionDao.deleteById(transactionId)
             enqueueTransactionSync(existing, SyncOperationType.DELETE, now)
         }
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     private suspend fun validateAccount(userId: Long, accountId: Long) =

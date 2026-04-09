@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
 class AccountRepository @Inject constructor(
     private val accountDao: AccountDao,
     private val syncOperationDao: SyncOperationDao,
+    private val syncRepository: SyncRepository,
     private val gson: Gson,
 ) {
 
@@ -47,6 +48,7 @@ class AccountRepository @Inject constructor(
                 createdAt = now,
             )
         }
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     suspend fun createAccount(userId: Long, rawName: String, balanceFen: Long) {
@@ -67,6 +69,7 @@ class AccountRepository @Inject constructor(
         )
         accountDao.upsert(account)
         enqueueAccountSync(account, SyncOperationType.CREATE, now)
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     suspend fun updateAccount(userId: Long, accountId: Long, rawName: String, balanceFen: Long) {
@@ -84,6 +87,7 @@ class AccountRepository @Inject constructor(
         )
         accountDao.upsert(updated)
         enqueueAccountSync(updated, SyncOperationType.UPDATE, now)
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     suspend fun deleteAccount(userId: Long, accountId: Long) {
@@ -100,6 +104,7 @@ class AccountRepository @Inject constructor(
                 retryCount = 0,
             ),
         )
+        syncRepository.pushPendingChangesBestEffort()
     }
 
     private suspend fun getOwnedAccount(userId: Long, accountId: Long): AccountEntity =

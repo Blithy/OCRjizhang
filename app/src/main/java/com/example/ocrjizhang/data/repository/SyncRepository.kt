@@ -47,7 +47,9 @@ class SyncRepository @Inject constructor(
     private val gson: Gson,
 ) {
 
-    suspend fun syncNow(): Result<SyncResult> = runCatching {
+    suspend fun syncNow(): Result<SyncResult> = pullLatest()
+
+    suspend fun pullLatest(): Result<SyncResult> = runCatching {
         val session = sessionManager.sessionFlow.first()
         val userId = session.userId ?: error("当前还没有登录账号")
         compactLocalCategories(userId)
@@ -55,17 +57,7 @@ class SyncRepository @Inject constructor(
         val localCategoriesSnapshot = categoryDao.getCategories(userId)
         val localTransactionsSnapshot = transactionDao.getTransactions(userId)
         val pendingOperations = syncOperationDao.getPendingOperations()
-        val pushRequest = buildPushRequest(pendingOperations)
-
-        if (pushRequest.hasChanges()) {
-            val pushResponse = syncService.pushChanges(pushRequest)
-            if (pushResponse.code != 0) {
-                error(pushResponse.msg.ifBlank { "同步上传失败" })
-            }
-            pendingOperations.forEach { operation ->
-                syncOperationDao.deleteById(operation.id)
-            }
-        }
+        var uploadedCount = pushPendingChangesInternal(pendingOperations)
 
         val pullResponse = syncService.pullChanges(SyncPullRequest(lastSyncTime = 0L))
         if (pullResponse.code != 0 || pullResponse.data == null) {
@@ -73,7 +65,6 @@ class SyncRepository @Inject constructor(
         }
 
         var payload = pullResponse.data
-        var uploadedCount = pendingOperations.size
 
         if (shouldBackfillFullSnapshot(
                 payload = payload,
@@ -88,7 +79,7 @@ class SyncRepository @Inject constructor(
                 if (fullPushResponse.code != 0) {
                     error(fullPushResponse.msg.ifBlank { "首次全量同步失败" })
                 }
-                uploadedCount = fullPushRequest.totalItemCount()
+                uploadedCount += fullPushRequest.totalItemCount()
                 val refreshedPullResponse = syncService.pullChanges(SyncPullRequest(lastSyncTime = 0L))
                 if (refreshedPullResponse.code != 0 || refreshedPullResponse.data == null) {
                     error(refreshedPullResponse.msg.ifBlank { "同步拉取失败" })
@@ -102,6 +93,7 @@ class SyncRepository @Inject constructor(
             payload.transactions.isNotEmpty()
         if (hasRemoteData || pendingOperations.isNotEmpty()) {
             applyRemoteSnapshot(userId, payload)
+            uploadedCount += pushPendingChangesInternal()
         }
 
         SyncResult(
@@ -110,6 +102,17 @@ class SyncRepository @Inject constructor(
             categoryCount = if (hasRemoteData || pendingOperations.isNotEmpty()) payload.categories.size else 0,
             transactionCount = if (hasRemoteData || pendingOperations.isNotEmpty()) payload.transactions.size else 0,
         )
+    }
+
+    suspend fun pushPendingChanges(): Result<Int> = runCatching {
+        val session = sessionManager.sessionFlow.first()
+        val userId = session.userId ?: error("当前还没有登录账号")
+        compactLocalCategories(userId)
+        pushPendingChangesInternal()
+    }
+
+    suspend fun pushPendingChangesBestEffort() {
+        pushPendingChanges().getOrNull()
     }
 
     private suspend fun applyRemoteSnapshot(userId: Long, payload: SyncPullPayloadDto) {
@@ -232,6 +235,25 @@ class SyncRepository @Inject constructor(
             updateTransactions = updateTransactions,
             deleteTransactionIds = deleteTransactionIds.toList(),
         )
+    }
+
+    private suspend fun pushPendingChangesInternal(): Int =
+        pushPendingChangesInternal(syncOperationDao.getPendingOperations())
+
+    private suspend fun pushPendingChangesInternal(
+        operations: List<SyncOperationEntity>,
+    ): Int {
+        val pushRequest = buildPushRequest(operations)
+        if (!pushRequest.hasChanges()) return 0
+
+        val pushResponse = syncService.pushChanges(pushRequest)
+        if (pushResponse.code != 0) {
+            error(pushResponse.msg.ifBlank { "同步上传失败" })
+        }
+        operations.forEach { operation ->
+            syncOperationDao.deleteById(operation.id)
+        }
+        return operations.size
     }
 
     private suspend fun buildFullSyncPushRequest(userId: Long): SyncPushRequest {
