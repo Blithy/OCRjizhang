@@ -17,7 +17,11 @@ import com.example.ocrjizhang.utils.LocalIdGenerator
 import com.google.gson.Gson
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.SupervisorJob
 
 @Singleton
 class TransactionRepository @Inject constructor(
@@ -29,6 +33,8 @@ class TransactionRepository @Inject constructor(
     private val syncRepository: SyncRepository,
     private val gson: Gson,
 ) {
+
+    private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     fun observeTransactions(userId: Long): Flow<List<TransactionEntity>> =
         transactionDao.observeTransactions(userId)
@@ -79,7 +85,7 @@ class TransactionRepository @Inject constructor(
             applyBalanceDelta(account.id, signedAmount(type, amountFen), now)
             enqueueTransactionSync(entity, SyncOperationType.CREATE, now)
         }
-        syncRepository.pushPendingChangesBestEffort()
+        enqueueBestEffortSync()
     }
 
     suspend fun updateTransaction(
@@ -121,7 +127,7 @@ class TransactionRepository @Inject constructor(
             applyBalanceDelta(account.id, signedAmount(type, amountFen), now)
             enqueueTransactionSync(entity, SyncOperationType.UPDATE, now)
         }
-        syncRepository.pushPendingChangesBestEffort()
+        enqueueBestEffortSync()
     }
 
     suspend fun deleteTransaction(userId: Long, transactionId: Long) {
@@ -132,7 +138,7 @@ class TransactionRepository @Inject constructor(
             transactionDao.deleteById(transactionId)
             enqueueTransactionSync(existing, SyncOperationType.DELETE, now)
         }
-        syncRepository.pushPendingChangesBestEffort()
+        enqueueBestEffortSync()
     }
 
     private suspend fun validateAccount(userId: Long, accountId: Long) =
@@ -183,5 +189,11 @@ class TransactionRepository @Inject constructor(
                 retryCount = 0,
             ),
         )
+    }
+
+    private fun enqueueBestEffortSync() {
+        repositoryScope.launch {
+            syncRepository.pushPendingChangesBestEffort()
+        }
     }
 }

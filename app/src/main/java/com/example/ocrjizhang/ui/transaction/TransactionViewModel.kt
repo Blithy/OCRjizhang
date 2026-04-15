@@ -50,10 +50,12 @@ class TransactionViewModel @Inject constructor(
     private val editingTransactionId = MutableStateFlow<Long?>(null)
     private val pendingEditRequestId = MutableStateFlow<Long?>(null)
     private val fromOcrPrefill = MutableStateFlow(false)
+    private val closeSignalVersion = MutableStateFlow(0)
     private var prefillApplied = false
 
-    private val _eventFlow = MutableSharedFlow<TransactionEvent>()
+    private val _eventFlow = MutableSharedFlow<TransactionEvent>(extraBufferCapacity = 4)
     val eventFlow: SharedFlow<TransactionEvent> = _eventFlow.asSharedFlow()
+    val closeSignal: StateFlow<Int> = closeSignalVersion
 
     private val transactionsState = currentUserId
         .flatMapLatest(::observeTransactions)
@@ -435,7 +437,6 @@ class TransactionViewModel @Inject constructor(
             }.onSuccess {
                 val editing = editingTransactionId.value != null
                 if (closeAfterSave) {
-                    emitMessage(if (editing) "交易已更新" else "交易已保存")
                     emitCloseEvent()
                 } else {
                     emitMessage(if (editing) "交易已更新，继续记下一笔" else "交易已保存，继续记下一笔")
@@ -502,8 +503,6 @@ class TransactionViewModel @Inject constructor(
     }
 
     private fun emitCloseEvent() {
-        viewModelScope.launch {
-            _eventFlow.emit(TransactionEvent.SavedAndClose)
-        }
+        closeSignalVersion.value = closeSignalVersion.value + 1
     }
 }

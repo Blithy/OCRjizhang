@@ -36,6 +36,7 @@ class TransactionEditorFragment : Fragment() {
     private val viewModel: TransactionViewModel by viewModels()
     private val args: TransactionEditorFragmentArgs by navArgs()
     private var latestState = TransactionUiState()
+    private var lastHandledCloseSignal = 0
     private var hasAnimatedIn = false
     private var isClosing = false
     private var dragStartY = 0f
@@ -143,15 +144,21 @@ class TransactionEditorFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect(::render) }
                 launch {
+                    viewModel.closeSignal.collect { signal ->
+                        if (signal > lastHandledCloseSignal) {
+                            lastHandledCloseSignal = signal
+                            animateCloseAndPop()
+                        }
+                    }
+                }
+                launch {
                     viewModel.eventFlow.collect { event ->
                         when (event) {
                             is TransactionEvent.Message -> {
                                 Snackbar.make(binding.root, event.message, Snackbar.LENGTH_SHORT).show()
                             }
 
-                            TransactionEvent.SavedAndClose -> {
-                                animateCloseAndPop()
-                            }
+                            TransactionEvent.SavedAndClose -> Unit
                         }
                     }
                 }

@@ -38,6 +38,7 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
     private val binding get() = _binding!!
     private val viewModel: TransactionViewModel by viewModels()
     private var latestState = TransactionUiState()
+    private var lastHandledCloseSignal = 0
 
     private val categoryAdapter by lazy {
         QuickCategoryAdapter { option ->
@@ -148,13 +149,21 @@ class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect(::render) }
                 launch {
+                    viewModel.closeSignal.collect { signal ->
+                        if (signal > lastHandledCloseSignal) {
+                            lastHandledCloseSignal = signal
+                            dismissAllowingStateLoss()
+                        }
+                    }
+                }
+                launch {
                     viewModel.eventFlow.collect { event ->
                         when (event) {
                             is TransactionEvent.Message -> {
                                 Snackbar.make(binding.root, event.message, Snackbar.LENGTH_SHORT).show()
                             }
 
-                            TransactionEvent.SavedAndClose -> dismiss()
+                            TransactionEvent.SavedAndClose -> Unit
                         }
                     }
                 }
