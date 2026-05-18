@@ -35,6 +35,10 @@ data class SyncResult(
     val transactionCount: Int,
 )
 
+/**
+ * 同步仓库。
+ * 负责把本地待同步操作推送到后端，并在用户手动触发时拉取后端最新快照覆盖本地。
+ */
 @Singleton
 class SyncRepository @Inject constructor(
     private val database: AppDatabase,

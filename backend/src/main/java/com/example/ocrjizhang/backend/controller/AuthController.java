@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 认证接口控制器。
+ * 提供注册和登录接口，供 Android 客户端和后台管理页共用。
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

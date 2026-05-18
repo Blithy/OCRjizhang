@@ -8,6 +8,10 @@ import java.time.format.DateTimeParseException
 import kotlin.math.abs
 import java.util.Locale
 
+/**
+ * 通用 OCR 票据解析器。
+ * 这个文件不负责“识别文字”，而是负责从原始文字里尽量提取金额、日期和商户信息。
+ */
 data class ParsedReceiptData(
     val amountText: String? = null,
     val amountFen: Long? = null,
@@ -174,6 +178,10 @@ object OcrReceiptParser {
         "\u751f\u6d3b\u5e2e\u624b",
     )
 
+    /**
+     * 通用文本解析入口。
+     * 当图片不是标准支付详情页，或者没有足够坐标信息时，就靠这里从纯文本中兜底提取字段。
+     */
     fun parse(rawText: String): ParsedReceiptData {
         val lines = rawText.lineSequence()
             .map(::normalizeLine)
@@ -193,6 +201,13 @@ object OcrReceiptParser {
         )
     }
 
+    /**
+     * 把各种中文日期格式尽量统一转换成时间戳。
+     * 例如：
+     * - 2026年4月1日
+     * - 2026/4/1 12:30
+     * - 2026-4-1
+     */
     fun parseDateToMillis(rawDate: String?): Long? {
         val normalized = rawDate
             ?.trim()
@@ -241,6 +256,11 @@ object OcrReceiptParser {
         .replace(Regex("""\s+"""), " ")
         .trim()
 
+    /**
+     * 通用金额筛选器。
+     * 这里不依赖坐标，只依赖“这一行文本像不像金额行”来打分。
+     * 适合作为全部 OCR 结果的基础兜底逻辑。
+     */
     private fun extractBestAmount(lines: List<String>): AmountCandidate? {
         extractSummaryAmount(lines)?.let { return it }
 
@@ -288,13 +308,19 @@ object OcrReceiptParser {
                     }
 
                     var score = 0
+                    // 只要这一行出现“合计/实付/金额”等关键词，就大幅加分。
                     if (hasKeyword) score += 120
+                    // 负数在退款、扣款场景里可能有意义，因此保留一定权重。
                     if (rawAmount.startsWith("-")) score += 60
+                    // 小数金额通常比整数更像真实支付金额。
                     if (normalizedText.contains('.')) score += 80
+                    // 独立成行的金额往往更重要。
                     if (isStandaloneNumericLine) score += 60
                     if (line.length <= 12) score += 30
                     if (index in 0..8) score += 20
                     if (!hasPenaltyKeyword) score += 15
+
+                    // 优惠、日期、数量、商品单价等场景容易误伤，这里统一做扣分。
                     if (hasPenaltyKeyword) score -= 80
                     if (hasDateKeyword && !hasKeyword) score -= 50
                     if (line.contains(':') && !rawAmount.contains('.') && !hasKeyword) score -= 60
@@ -320,6 +346,10 @@ object OcrReceiptParser {
         return candidates.maxByOrNull(AmountCandidate::score)
     }
 
+    /**
+     * 优先处理“合计/实付/应付”这类总结区域。
+     * 原因是很多截图里会同时出现原价、优惠、配送费、单价，只有总结区域更接近最终入账金额。
+     */
     private fun extractSummaryAmount(lines: List<String>): AmountCandidate? {
         val anchorIndex = lines.indexOfLast { line ->
             val lowerCaseLine = line.lowercase(Locale.ROOT)
@@ -484,7 +514,7 @@ object OcrReceiptParser {
                 val line = rawLine
                     .trimStart('`', '.', '\u00b7', '\u3002', '-', '_', ':', '@', '|', '[', ']', '>', '\u300b', '①')
                     .trim()
-                val normalizedMerchant = normalizeMerchantName(line)
+                val normalizedMerchant = normalizeMerchantName( line)
                 val shouldInspect = index < 18 || amountLineIndex?.let { abs(index - it) <= 3 } == true
                 if (!shouldInspect) {
                     return@forEachIndexed

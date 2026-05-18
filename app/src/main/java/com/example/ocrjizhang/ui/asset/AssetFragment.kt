@@ -19,6 +19,10 @@ import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+/**
+ * 资产页面。
+ * 这里把账户当作“钱放在哪里”的载体，负责展示总资产和各个资金账户的余额。
+ */
 @AndroidEntryPoint
 class AssetFragment : Fragment() {
 

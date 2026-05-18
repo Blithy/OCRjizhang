@@ -26,6 +26,10 @@ data class SessionSnapshot(
     val nickname: String = "",
 )
 
+/**
+ * 会话管理器。
+ * 这个文件专门负责保存和读取登录状态，比如 token、userId、用户名和昵称。
+ */
 @Singleton
 class SessionManager @Inject constructor(
     @ApplicationContext private val context: Context,

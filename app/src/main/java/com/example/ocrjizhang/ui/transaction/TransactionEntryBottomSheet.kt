@@ -31,6 +31,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import java.util.Calendar
 import kotlinx.coroutines.launch
 
+/**
+ * 新增/编辑记账的大型底部弹层。
+ * 用户在这里完成收入支出切换、分类账户选择、金额输入，以及 OCR 结果回填后的确认保存。
+ */
 @AndroidEntryPoint
 class TransactionEntryBottomSheet : BottomSheetDialogFragment() {
 

@@ -14,6 +14,10 @@ import com.example.ocrjizhang.databinding.ActivityMainBinding
 import com.example.ocrjizhang.ui.transaction.TransactionEntryBottomSheet
 import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * 应用唯一的宿主 Activity。
+ * 这里负责承载导航容器，并统一控制顶部栏、底部导航和首页 FAB 的显示与动效。
+ */
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 

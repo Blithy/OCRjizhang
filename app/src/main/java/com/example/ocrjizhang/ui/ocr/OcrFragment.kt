@@ -22,6 +22,10 @@ import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+/**
+ * OCR 页面。
+ * 负责拍照/选图、显示预览、触发识别、展示识别结果，并把结果带回记账面板。
+ */
 @AndroidEntryPoint
 class OcrFragment : Fragment() {
 

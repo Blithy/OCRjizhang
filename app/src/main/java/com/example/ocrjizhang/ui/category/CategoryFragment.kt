@@ -25,6 +25,10 @@ import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+/**
+ * 分类管理页面。
+ * 负责收入/支出分类的新增、修改、删除，以及分类图标的选择。
+ */
 @AndroidEntryPoint
 class CategoryFragment : Fragment() {
 

@@ -22,6 +22,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+/**
+ * 演示后端的内存数据仓库。
+ * 它在内存里维护用户、账户、分类和交易数据，用来模拟服务端的数据读写与同步。
+ */
 @Component
 public class DemoStore {
 

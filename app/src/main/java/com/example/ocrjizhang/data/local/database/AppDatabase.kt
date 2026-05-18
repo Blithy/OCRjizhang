@@ -17,6 +17,10 @@ import com.example.ocrjizhang.data.local.entity.SyncOperationEntity
 import com.example.ocrjizhang.data.local.entity.TransactionEntity
 import com.example.ocrjizhang.data.local.entity.UserEntity
 
+/**
+ * App 的本地数据库总入口。
+ * 用户、账户、分类、交易、OCR 历史和同步队列都保存在这里。
+ */
 @Database(
     entities = [
         UserEntity::class,

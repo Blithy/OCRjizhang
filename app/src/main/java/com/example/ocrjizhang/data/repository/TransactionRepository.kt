@@ -23,6 +23,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.SupervisorJob
 
+/**
+ * 交易仓库。
+ * 这是记账主链路的核心：新增、编辑、删除交易时，会同时联动账户余额和同步队列。
+ */
 @Singleton
 class TransactionRepository @Inject constructor(
     private val database: AppDatabase,

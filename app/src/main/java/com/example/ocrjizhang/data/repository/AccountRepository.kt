@@ -12,6 +12,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * 账户仓库。
+ * 负责资金账户的增删改查，并在本地保存成功后把变更加入同步队列。
+ */
 @Singleton
 class AccountRepository @Inject constructor(
     private val accountDao: AccountDao,

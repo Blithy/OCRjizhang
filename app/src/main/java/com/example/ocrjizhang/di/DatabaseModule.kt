@@ -17,6 +17,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * 数据库依赖注入模块。
+ * 这里统一创建 Room 数据库实例，并把各个 DAO 暴露给仓库层使用。
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {

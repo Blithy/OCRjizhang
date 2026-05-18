@@ -17,6 +17,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * 分类仓库。
+ * 负责收入/支出分类管理，以及删除分类时对历史交易做兜底重定向。
+ */
 @Singleton
 class CategoryRepository @Inject constructor(
     private val database: AppDatabase,

@@ -10,6 +10,10 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+/**
+ * 统计仓库。
+ * 负责按时间范围读取交易数据，并交给统计计算器生成图表需要的聚合结果。
+ */
 @Singleton
 class StatisticsRepository @Inject constructor(
     private val transactionDao: TransactionDao,

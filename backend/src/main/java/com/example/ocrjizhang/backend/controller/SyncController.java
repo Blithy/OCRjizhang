@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 同步接口控制器。
+ * 负责接收客户端推送的本地变更，以及向客户端返回当前后端快照。
+ */
 @RestController
 @RequestMapping("/api/sync")
 public class SyncController {

@@ -27,6 +27,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * 后台管理页控制器。
+ * 负责渲染网页端的总览、账户、分类和交易管理页面，方便演示前后端联动。
+ */
 @Controller
 @RequestMapping("/manage")
 public class ManageController {

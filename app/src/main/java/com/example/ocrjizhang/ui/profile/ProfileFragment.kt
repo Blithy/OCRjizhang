@@ -20,6 +20,10 @@ import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+/**
+ * “我的”页面。
+ * 负责用户资料管理、分类管理入口、手动同步入口，以及退出登录。
+ */
 @AndroidEntryPoint
 class ProfileFragment : Fragment() {
 

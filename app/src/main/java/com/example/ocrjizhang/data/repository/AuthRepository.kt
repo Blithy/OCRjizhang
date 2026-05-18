@@ -24,6 +24,10 @@ data class CurrentUserProfile(
     val phone: String,
 )
 
+/**
+ * 用户认证仓库。
+ * 负责登录、注册、退出登录和个人信息更新，并把登录会话落到本地 DataStore。
+ */
 @Singleton
 class AuthRepository @Inject constructor(
     private val authService: AuthService,

@@ -22,6 +22,10 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
+/**
+ * 网络依赖注入模块。
+ * 这里集中配置 OkHttp、Retrofit、Gson 和鉴权拦截器，供前端访问本地后端接口使用。
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {

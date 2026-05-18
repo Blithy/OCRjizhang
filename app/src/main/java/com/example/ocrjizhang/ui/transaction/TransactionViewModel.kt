@@ -30,6 +30,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/**
+ * 记账弹层的状态中心。
+ * 这里统一管理金额、分类、账户、时间、备注和编辑态，并调用仓库完成保存或删除。
+ */
 @HiltViewModel
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionViewModel @Inject constructor(

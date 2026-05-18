@@ -40,6 +40,10 @@ import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.launch
 
+/**
+ * 统计分析页面。
+ * 负责切换统计周期，并把聚合后的交易数据绘制成柱状图、饼图和资产趋势图。
+ */
 @AndroidEntryPoint
 class StatisticsFragment : Fragment() {
 

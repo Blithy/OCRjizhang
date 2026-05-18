@@ -4,6 +4,10 @@ import androidx.annotation.DrawableRes
 import com.example.ocrjizhang.R
 import com.example.ocrjizhang.data.local.entity.RecordType
 
+/**
+ * 分类图标注册表。
+ * 这里维护“图标 key - 显示名称 - drawable 资源”的映射，供分类选择和分类展示统一使用。
+ */
 data class CategoryIconOption(
     val key: String,
     val label: String,

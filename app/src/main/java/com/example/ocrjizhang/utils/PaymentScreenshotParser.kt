@@ -3,6 +3,10 @@ package com.example.ocrjizhang.utils
 import com.example.ocrjizhang.data.ocr.OcrLine
 import kotlin.math.abs
 
+/**
+ * 支付截图专用解析器。
+ * 这里会结合 OCR 文本的空间位置、关键词和候选评分，尽量识别出真正的实付金额和商户名。
+ */
 object PaymentScreenshotParser {
 
     private val amountValueRegex = Regex(
@@ -63,11 +67,15 @@ object PaymentScreenshotParser {
         lines: List<OcrLine>,
         fallback: ParsedReceiptData,
     ): ParsedReceiptData? {
+        // 第一步先把 OCR 行结果转成更适合做空间判断的 LayoutLine，
+        // 并按“从上到下、从左到右”的阅读顺序排序。
         val layoutLines = lines
             .map(::toLayoutLine)
             .filter { it.text.isNotBlank() }
             .sortedWith(compareBy<LayoutLine> { it.top }.thenBy { it.left })
 
+        // 如果这张图不像支付详情页，就不要强行套支付截图规则，
+        // 直接让外层继续使用通用票据解析结果。
         if (!looksLikePaymentDetail(layoutLines)) {
             return null
         }
@@ -89,6 +97,11 @@ object PaymentScreenshotParser {
         )
     }
 
+    /**
+     * 先判断当前图片是否像“支付详情页”。
+     * 这里不直接看金额，而是看是否出现了支付时间、交易单号、商户单号、支付方式等字段标签。
+     * 只有满足一定信号数量，才启用更激进的支付截图规则。
+     */
     private fun looksLikePaymentDetail(lines: List<LayoutLine>): Boolean {
         val strongSignalCount = buildList {
             if (lines.any(::isPaymentTimeLabel)) add("time")
@@ -105,6 +118,12 @@ object PaymentScreenshotParser {
         return strongSignalCount >= 1 && strongSignalCount + assistSignalCount >= 3
     }
 
+    /**
+     * 日期提取思路：
+     * 1. 先找到“支付时间/交易时间”这类标签。
+     * 2. 优先在同一行右侧找真正的日期值。
+     * 3. 如果同一行没有，再向标签正下方找最近的日期文本。
+     */
     private fun extractDateText(lines: List<LayoutLine>): String? {
         val label = lines
             .filter(::isPaymentTimeLabel)
@@ -136,6 +155,13 @@ object PaymentScreenshotParser {
             ?.let(::normalizeDateValue)
     }
 
+    /**
+     * 商户提取思路：
+     * 1. 先找到“商品/商户名称”这种标签。
+     * 2. 优先在同一行右边找候选值。
+     * 3. 如果没找到，再往标签下方找最像商户的一行。
+     * 4. 识别后再过滤平台名、营销词和尾部噪声。
+     */
     private fun extractMerchantName(lines: List<LayoutLine>): String? {
         val label = lines
             .filter(::isProductLabel)
@@ -158,6 +184,13 @@ object PaymentScreenshotParser {
         return value?.text?.let(::cleanMerchantName)?.takeIf { it.isNotBlank() }
     }
 
+    /**
+     * 金额提取是支付截图解析里最关键的一步。
+     * 这里不是简单取“最大的数”或“最后一个数”，而是：
+     * 1. 先找到“合计/实付/应付”这类金额标签；
+     * 2. 再在标签右侧或同一视觉行附近找数字候选；
+     * 3. 最后通过位置 + 文本特征做综合打分。
+     */
     private fun extractAmount(lines: List<LayoutLine>): AmountCandidate? {
         val label = lines
             .filter(::isSummaryAmountLabel)
@@ -180,12 +213,22 @@ object PaymentScreenshotParser {
             .maxByOrNull { candidateWithAmount ->
                 val line = candidateWithAmount.candidate
                 var score = 0
+
+                // 越接近标签的同一行，越像真正和该标签对应的金额。
                 score += 180 - abs(line.centerY - label.centerY)
+
+                // 在中文支付详情页里，真正金额通常出现在标签右侧，所以越靠右通常越可信。
                 score += (line.left - label.left).coerceAtLeast(0) / 3
                 if (line.left >= label.right - 24) score += 120
+
+                // 金额一般不会跑到标签上方，因此下方或同一高度更合理。
                 if (line.top >= label.top) score += 20
                 if (abs(line.centerY - label.centerY) <= maxOf(label.height, 28)) score += 120
+
+                // 带人民币符号的值更像最终金额。
                 if (line.text.contains('¥') || line.text.contains('\uffe5')) score += 35
+
+                // 对原价、立减、优惠这些词做扣分，避免把促销价当成最终实付。
                 if (line.text.contains("\u539f\u4ef7")) score -= 100
                 if (line.text.contains("\u7acb\u51cf")) score -= 70
                 if (line.text.contains("\u4f18\u60e0") && candidateWithAmount.amount.amountIndex == 0) score -= 80
@@ -195,6 +238,13 @@ object PaymentScreenshotParser {
         return bestCandidate?.amount
     }
 
+    /**
+     * 一个通用的“标签 -> 值”查找器。
+     * 适合日期、商户这种存在明确字段标签的场景。
+     * 它主要依赖两个维度：
+     * 1. 候选值要在标签右边；
+     * 2. 候选值的垂直中心要尽量和标签对齐。
+     */
     private fun selectBestValue(
         label: LayoutLine,
         candidates: List<LayoutLine>,
@@ -239,6 +289,15 @@ object PaymentScreenshotParser {
         }
     }
 
+    /**
+     * 商户候选过滤器。
+     * 这里的目标不是“什么都接收”，而是先排除明显不可能是商户的文本：
+     * - 字段标签
+     * - 纯数字
+     * - 平台名称
+     * - 营销文案
+     * - 日期时间
+     */
     private fun isMerchantValueCandidate(line: LayoutLine): Boolean {
         if (line.compactText.isBlank()) {
             return false
@@ -269,6 +328,11 @@ object PaymentScreenshotParser {
         return chineseOrLetterCount >= 2
     }
 
+    /**
+     * 商户候选打分。
+     * 这里会偏好更像“店铺名称”的文本，比如包含括号、店、餐、茶等字样，
+     * 同时会轻微利用坐标位置，避免把页面顶部标题误识别成商户。
+     */
     private fun scoreMerchantLine(line: LayoutLine): Int {
         var score = 0
         if (line.text.contains('(') || line.text.contains('\uff08')) score += 60
@@ -282,6 +346,10 @@ object PaymentScreenshotParser {
         return score
     }
 
+    /**
+     * 给金额标签本身打分。
+     * “合计”一般比“应付”更接近真实最终金额，所以会给更高权重。
+     */
     private fun scoreSummaryLabel(line: LayoutLine): Int {
         var score = line.top
         if (line.compactText == "\u5408\u8ba1" || line.compactText.startsWith("\u5408\u8ba1")) score += 240
@@ -290,6 +358,11 @@ object PaymentScreenshotParser {
         return score
     }
 
+    /**
+     * 从一整行文本里提取最可信的单个金额。
+     * 这里会先用正则把所有数字候选都找出来，再根据“是否带小数、是否带 ¥、是否在行尾、
+     * 是否被原价/优惠等词包围”等特征做局部打分。
+     */
     private fun extractAmountCandidate(text: String): AmountCandidate? {
         return amountValueRegex.findAll(text)
             .mapNotNull { match ->
@@ -313,11 +386,16 @@ object PaymentScreenshotParser {
                 val isLastAmountInLine = amountValueRegex.findAll(text).lastOrNull()?.range == match.range
 
                 var score = 0
+                // 真正支付金额大多带小数，因此优先保留小数金额。
                 if (normalizedText.contains('.')) score += 100
+                // 带货币符号的候选更接近最终展示金额。
                 if (rawValue.contains('¥') || rawValue.contains('\uffe5')) score += 70
+                // 在支付详情页中，最终金额经常写在行尾。
                 if (start >= text.length / 2) score += 55
                 if (end >= text.length - 2) score += 45
                 if (isLastAmountInLine) score += 80
+
+                // 下面这些词经常出现在非最终金额附近，因此要扣分。
                 if (prefix.contains("\u539f\u4ef7")) score -= 110
                 if (prefix.contains("\u4f18\u60e0") && !isLastAmountInLine) score -= 90
                 if (prefix.contains("\u7acb\u51cf")) score -= 90

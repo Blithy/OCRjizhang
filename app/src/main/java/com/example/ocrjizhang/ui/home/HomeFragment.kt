@@ -21,6 +21,10 @@ import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
+/**
+ * 首页账本页面。
+ * 负责展示本月收支总览、最近记账、OCR 入口，以及打开新增记账底部弹层。
+ */
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
 
